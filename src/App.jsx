@@ -1,16 +1,10 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom'; // <--- Import the BrowserRouter
 
-function App() {
-  return (
-    <div className="p-10">
-      <h1 className="text-3xl font-bold underline text-blue-500">
-        Hello world! This should be big, bold, blue, and underlined.
-      </h1>
-    </div>
-  )
-}
-
-export default App
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter> 
+    </BrowserRouter>
+  </React.StrictMode>,
+);
