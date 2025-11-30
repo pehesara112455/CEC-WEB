@@ -1,10 +1,13 @@
 import React from "react";
 import Header from "../Components/Navbar";
+import Slideshow from "../Components/SlideShow";
 
-export default function () {
+export default function Homepage () {
     return(
-        <dive>
+        <div classname = "relative w-full">
             <Header/>
-        </dive>
+            <Slideshow/>
+            <h1 className="text-6xl font-bold text-white absolute top-25 left-10 gap-7 drop-shadow-lg leading-17">Community <br/>Education Center</h1>
+        </div>
     )
 }
