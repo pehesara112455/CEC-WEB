@@ -45,7 +45,7 @@ function Header() {
           <Link to="/" className={`text-lg font-medium hover:text-red-200 transition duration-150 ${isActive('/')}`}>
             Home
           </Link>
-          <Link to="/about" className={`text-lg font-medium hover:text-red-200 transition duration-150 ${isActive('/about')}`}>
+          <Link to="/About" className={`text-lg font-medium hover:text-red-200 transition duration-150 ${isActive('/About')}`}>
             About
           </Link>
           <Link to="/training-center" className={`text-lg font-medium hover:text-red-200 transition duration-150 ${isActive('/training-center')}`}>
@@ -96,9 +96,9 @@ function Header() {
             Home
           </Link>
           <Link 
-            to="/about" 
+            to="/About" 
             onClick={handleLinkClick}
-            className={`block py-2 text-lg font-medium hover:bg-red-700 rounded-md transition duration-150 ${isActive('/about') }`}
+            className={`block py-2 text-lg font-medium hover:bg-red-700 rounded-md transition duration-150 ${isActive('/About') }`}
           >
             About
           </Link>
