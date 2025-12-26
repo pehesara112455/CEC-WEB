@@ -1,12 +1,13 @@
 // Nav-Bar.jsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(true);
 
   const menuItems = [
     { name: 'RESERVATIONS', href: '#' },
-    { name: 'ROOMS & HALLS', href: '#' },
+    { name: 'ROOMS & HALLS', href: '/admin/add-halls-rooms' },
     { name: 'CLIENT DETAILS', href: '#' },
     { name: 'BLOG POSTS', href: '#' },
     { name: 'SERVICES', href: '#' },
@@ -32,7 +33,7 @@ const NavBar = () => {
       <aside 
         className={`${
           isOpen ? 'w-64 opacity-100' : 'w-0 opacity-0 p-0 overflow-hidden'
-        } bg-[#8B0000] text-white flex flex-col font-sans shadow-xl h-screen transition-all duration-300 ease-in-out whitespace-nowrap`}
+        } sticky top-0 h-screen z-40 bg-[#8B0000] text-white flex flex-col font-sans shadow-xl transition-all duration-300 ease-in-out whitespace-nowrap`}
       >
         {/* Header Section */}
         <div className="p-6 flex items-center gap-3">
@@ -55,15 +56,9 @@ const NavBar = () => {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-8 py-4">
-          {/* CHANGED: 
-             1. Removed 'space-y-8' 
-             2. Added 'divide-y' (creates the borders)
-             3. Added 'divide-white/30' (makes lines white but semi-transparent for a cleaner look)
-          */}
+        <nav className="flex-1 px-8 py-4 overflow-y-auto">
           <ul className="divide-y divide-white/30">
             {menuItems.map((item, index) => (
-              // Added 'py-4' to add breathing room above and below the text relative to the lines
               <li key={index} className="py-4">
                 <a 
                   href={item.href} 
@@ -78,8 +73,8 @@ const NavBar = () => {
 
         {/* Logout Section */}
         <div className="p-6 flex justify-center pb-10">
-<button className="bg-white text-[#8B0000] font-bold py-2 px-10 rounded shadow hover:bg-[#EFB506] hover:text-[#8B0000] transition-colors duration-200">            LOG OUT
-          </button>
+<button className="bg-white text-[#8B0000] font-bold py-2 px-10 rounded shadow hover:bg-[#EFB506] hover:text-[#8B0000] transition-colors duration-200">
+   LOG OUT </button>
         </div>
       </aside>
     </>
