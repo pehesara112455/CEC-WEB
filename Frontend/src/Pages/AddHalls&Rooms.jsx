@@ -3,7 +3,7 @@ import axios from "axios";
 import NavBar from "./../Components/AdminNav.jsx";
 
 //DATA TABLE COMPONENT 
-const DataTable = ({ title, data, onAdd, type, onSearch, onDelete }) => {
+const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All");
   
@@ -84,7 +84,13 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete }) => {
                   <td className="py-4 px-2 font-semibold">Rs.{item.amount}</td>
                   <td className="py-4 px-2 text-center">
                     <div className="flex justify-center gap-4 text-xl">
-                      <button className="text-orange-500 hover:scale-125 transition-transform" title="Edit">✏️</button>
+                      <button 
+                        onClick={() => onEdit(item, type)}
+                        className="text-orange-500 hover:scale-125 transition-transform" 
+                        title="Edit"
+                      >
+                        ✏️
+                      </button>
                       <button 
                         onClick={() => onDelete(type === 'hall' ? 'halls' : 'rooms', item.id)} 
                         className="text-red-500 hover:scale-125 transition-transform" 
@@ -149,7 +155,7 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete }) => {
 };
 
 // MODAL COMPONENT
-const Modal = ({ isOpen, onClose, title, onConfirm, children, onClear }) => {
+const Modal = ({ isOpen, onClose, title, onConfirm, children, onClear, submitText }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
@@ -165,7 +171,7 @@ const Modal = ({ isOpen, onClose, title, onConfirm, children, onClear }) => {
           <div className="space-y-4 max-h-[65vh] overflow-y-auto px-1">{children}</div>
           <div className="flex gap-4 mt-8">
             <button onClick={onClear} className="flex-1 bg-orange-500 text-white font-bold py-2.5 rounded-lg active:scale-95 shadow">Clear</button>
-            <button onClick={onConfirm} className="flex-1 bg-[#8B0000] text-white font-bold py-2.5 rounded-lg active:scale-95 shadow">Submit</button>
+            <button onClick={onConfirm} className="flex-1 bg-[#8B0000] text-white font-bold py-2.5 rounded-lg active:scale-95 shadow">{submitText || "Submit"}</button>
           </div>
         </div>
       </div>
@@ -182,6 +188,8 @@ const AddHallsRooms = () => {
   
   const [isHallModalOpen, setIsHallModalOpen] = useState(false);
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
   const initialForm = { name: "", capacity: "", type: "Non A/C", amount: "", extraHour: "" };
   const [formData, setFormData] = useState(initialForm);
 
@@ -209,16 +217,15 @@ const AddHallsRooms = () => {
   const validateForm = (collectionName) => {
     const { name, capacity, amount } = formData;
 
-    //Check for empty fields (except extraHour)
     if (!name.trim() || !capacity || !amount) {
       alert("Please fill in all required fields (Name, Capacity, and Amount).");
       return false;
     }
 
-    //Check for unique name
     const currentList = collectionName === 'halls' ? halls : rooms;
+    // Check uniqueness, but ignore current item if in edit mode
     const isNameExists = currentList.some(
-      item => item.name.toLowerCase() === name.toLowerCase().trim()
+      item => item.name.toLowerCase() === name.toLowerCase().trim() && item.id !== editId
     );
 
     if (isNameExists) {
@@ -229,17 +236,37 @@ const AddHallsRooms = () => {
     return true;
   };
 
+  const handleEdit = (item, type) => {
+    setIsEditMode(true);
+    setEditId(item.id);
+    setFormData({
+      name: item.name,
+      capacity: item.capacity,
+      type: item.type,
+      amount: item.amount,
+      extraHour: item.extraHour || ""
+    });
+    if (type === 'hall') setIsHallModalOpen(true);
+    else setIsRoomModalOpen(true);
+  };
+
   const handleSubmit = async (collectionName) => {
-    // Run Validation
     if (!validateForm(collectionName)) return;
 
     try {
-      await axios.post("http://localhost:5000/api/add-item", { ...formData, collectionType: collectionName });
+      if (isEditMode) {
+        await axios.put(`http://localhost:5000/api/update-item/${collectionName}/${editId}`, formData);
+      } else {
+        await axios.post("http://localhost:5000/api/add-item", { ...formData, collectionType: collectionName });
+      }
+      
       setFormData(initialForm);
+      setIsEditMode(false);
+      setEditId(null);
       collectionName === 'halls' ? setIsHallModalOpen(false) : setIsRoomModalOpen(false);
       fetchData(); 
-      alert(`${collectionName.toUpperCase()} added successfully!`);
-    } catch (err) { alert("Error adding item."); }
+      alert(`${collectionName.toUpperCase()} ${isEditMode ? 'updated' : 'added'} successfully!`);
+    } catch (err) { alert(`Error ${isEditMode ? 'updating' : 'adding'} item.`); }
   };
 
   const handleDelete = async (collection, id) => {
@@ -270,7 +297,8 @@ const AddHallsRooms = () => {
             type="hall"
             onSearch={setHallFilter}
             onDelete={handleDelete}
-            onAdd={() => { setFormData(initialForm); setIsHallModalOpen(true); }} 
+            onEdit={handleEdit}
+            onAdd={() => { setIsEditMode(false); setEditId(null); setFormData(initialForm); setIsHallModalOpen(true); }} 
           />
           <DataTable 
             title="ROOMS" 
@@ -278,7 +306,8 @@ const AddHallsRooms = () => {
             type="room"
             onSearch={setRoomFilter}
             onDelete={handleDelete}
-            onAdd={() => { setFormData(initialForm); setIsRoomModalOpen(true); }} 
+            onEdit={handleEdit}
+            onAdd={() => { setIsEditMode(false); setEditId(null); setFormData(initialForm); setIsRoomModalOpen(true); }} 
           />
         </div>
       </div>
@@ -286,8 +315,10 @@ const AddHallsRooms = () => {
       {/* HALL MODAL */}
       <Modal 
         isOpen={isHallModalOpen} onClose={() => setIsHallModalOpen(false)} 
-        title="Add A New Hall" onConfirm={() => handleSubmit('halls')} 
+        title={isEditMode ? "Edit Hall" : "Add A New Hall"} 
+        onConfirm={() => handleSubmit('halls')} 
         onClear={() => setFormData(initialForm)}
+        submitText={isEditMode ? "Update" : "Submit"}
       >
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Hall Name *</label>
@@ -312,13 +343,18 @@ const AddHallsRooms = () => {
           <label className="block text-[#8B0000] font-bold mb-1">Amount *</label>
           <input name="amount" type="number" value={formData.amount} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
         </div>
+        <div className="border-2 border-dashed border-gray-200 p-6 rounded-lg text-center text-gray-400 cursor-pointer hover:bg-gray-50 transition-colors">
+          📷 Upload Image
+        </div>
       </Modal>
 
       {/* ROOM MODAL */}
       <Modal 
         isOpen={isRoomModalOpen} onClose={() => setIsRoomModalOpen(false)} 
-        title="Add A New Room" onConfirm={() => handleSubmit('rooms')} 
+        title={isEditMode ? "Edit Room" : "Add A New Room"} 
+        onConfirm={() => handleSubmit('rooms')} 
         onClear={() => setFormData(initialForm)}
+        submitText={isEditMode ? "Update" : "Submit"}
       >
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Room Name *</label>
@@ -342,6 +378,9 @@ const AddHallsRooms = () => {
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Amount *</label>
           <input name="amount" type="number" value={formData.amount} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
+        </div>
+        <div className="border-2 border-dashed border-gray-200 p-6 rounded-lg text-center text-gray-400 cursor-pointer hover:bg-gray-50 transition-colors">
+          📷 Upload Image
         </div>
       </Modal>
     </div>
