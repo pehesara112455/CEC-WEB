@@ -15,9 +15,10 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
   const currentRows = data.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(data.length / rowsPerPage);
 
-  const handleSearchClick = () => {
+  // Unified handler to trigger the search in parent component
+  const handleFilterChange = (newSearchTerm, newFilterType) => {
     setCurrentPage(1); 
-    onSearch({ name: searchTerm, type: filterType });
+    onSearch({ name: newSearchTerm, type: newFilterType });
   };
 
   return (
@@ -32,31 +33,40 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
         </button>
       </div>
 
-      <div className="mb-6 flex flex-col md:flex-row gap-3 items-center">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder={`Search ${title.toLowerCase()} by name...`}
-          className="flex-1 w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-[#8B0000]/20 outline-none"
-        />
+      {/* --- NEW SEARCH BAR SECTION --- */}
+      <div className="mb-6 flex flex-col md:flex-row gap-3 items-center justify-end">
+        {/* Type Filter Dropdown */}
         <select
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="w-full md:w-48 border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-[#8B0000]/20 outline-none"
+          onChange={(e) => {
+            setFilterType(e.target.value);
+            handleFilterChange(searchTerm, e.target.value);
+          }}
+          className="w-full md:w-48 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] transition-all text-gray-600"
         >
           <option value="All">All Types</option>
           <option value="A/C">A/C</option>
           <option value="Non A/C">Non A/C</option>
         </select>
-        <button 
-          onClick={handleSearchClick} 
-          className="bg-[#8B0000] text-white p-2.5 rounded-md hover:bg-red-800 transition-all shadow-md px-6"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </button>
+
+        {/* Search Input with Icon */}
+        <div className="relative group w-full md:w-72">
+          <input
+            type="text"
+            placeholder={`Search ${title.toLowerCase()}...`}
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              handleFilterChange(e.target.value, filterType);
+            }}
+            className="w-full pl-5 pr-10 py-2 rounded-md border border-gray-300 text-gray-600 focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] transition-all"
+          />
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       <div className="overflow-x-auto min-h-[380px]">
@@ -154,7 +164,7 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
   );
 };
 
-// MODAL COMPONENT
+// MODAL COMPONENT (UNCHANGED)
 const Modal = ({ isOpen, onClose, title, onConfirm, children, onClear, submitText }) => {
   if (!isOpen) return null;
   return (
@@ -179,7 +189,7 @@ const Modal = ({ isOpen, onClose, title, onConfirm, children, onClear, submitTex
   );
 };
 
-//MAIN PAGE COMPONENT
+//MAIN PAGE COMPONENT (UNCHANGED)
 const AddHallsRooms = () => {
   const [halls, setHalls] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -213,7 +223,6 @@ const AddHallsRooms = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // DATA VALIDATION LOGIC
   const validateForm = (collectionName) => {
     const { name, capacity, amount } = formData;
 
@@ -223,7 +232,6 @@ const AddHallsRooms = () => {
     }
 
     const currentList = collectionName === 'halls' ? halls : rooms;
-    // Check uniqueness, but ignore current item if in edit mode
     const isNameExists = currentList.some(
       item => item.name.toLowerCase() === name.toLowerCase().trim() && item.id !== editId
     );
@@ -312,7 +320,6 @@ const AddHallsRooms = () => {
         </div>
       </div>
 
-      {/* HALL MODAL */}
       <Modal 
         isOpen={isHallModalOpen} onClose={() => setIsHallModalOpen(false)} 
         title={isEditMode ? "Edit Hall" : "Add A New Hall"} 
@@ -348,7 +355,6 @@ const AddHallsRooms = () => {
         </div>
       </Modal>
 
-      {/* ROOM MODAL */}
       <Modal 
         isOpen={isRoomModalOpen} onClose={() => setIsRoomModalOpen(false)} 
         title={isEditMode ? "Edit Room" : "Add A New Room"} 
