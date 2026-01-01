@@ -14,7 +14,7 @@ const firebaseConfig = {
   storageBucket: "softstack-c7861.firebasestorage.app",
   messagingSenderId: "208691132488",
   appId: "1:208691132488:web:3d827e941fc87c6eeb807d",
-  measurementId: "G-JN5QWBLYPX"
+  measurementId: "G-JN5QWBLYPX",
 };
 
 // Initialize Firebase
