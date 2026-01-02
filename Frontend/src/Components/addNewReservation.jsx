@@ -127,8 +127,13 @@ const AddReservation = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <label className="w-36 text-gray-700 font-semibold">Quantity</label>
-              <input type="number" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900" />
+              <label className="w-36 text-gray-700 font-semibold">Date From</label>
+              <input type="date" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900" />
+            </div>
+
+            <div className="flex items-center gap-4">
+              <label className="w-36 text-gray-700 font-semibold">Date To</label>
+              <input type="date" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900" />
             </div>
           </div>
 
