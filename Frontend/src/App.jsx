@@ -20,8 +20,6 @@ function App() {
       <Route path="/addReservationStage2" element={<AddReservationStage2 />} />
       <Route path="/editReservation" element={<EditReservation />} />
       <Route path="/editReservationStage2" element={<EditReservationStage2 />} />
-
-
     </Routes>
    </BrowserRouter>
     

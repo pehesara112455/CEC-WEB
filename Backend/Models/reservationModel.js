@@ -19,6 +19,14 @@ class reservation {
       createdAt: this.createdAt
     };
   }
+
+  static roomsSubCollection(room){
+    return{
+      RoomName:room.name|| "None",
+      DateFrom:room.from|| 0,
+      DateTo:room.to|| 0
+    }
+  }
 }
 
 module.exports = reservation;
