@@ -25,12 +25,26 @@ const AddReservationStage2 = ({ onBack, onNext }) => {
 
   const mealHandel = (e) => {
     const { name, value } = e.target;
+    if (name === 'Amount') {
+      const onlyNumber = value.replace(/[^0-9]/g, '');
+      setMealData({...mealData, [name]:onlyNumber})
+    }
+    else{
     setMealData({ ...mealData, [name]: value });
+    }
+    
   };
 
   const otherHandel = (e) => {
     const { name, value } = e.target;
-    setOtherData({ ...otherData, [name]: value });
+    if (name === 'Amount') {
+      const onlyNumber = value.replace(/[^0-9]/g, '');
+      setOtherData({ ...otherData, [name]: onlyNumber });
+
+    }
+    else{
+      setOtherData({ ...otherData, [name]: value });
+    }
   };
 
   const addMeal = () => {

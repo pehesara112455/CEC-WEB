@@ -21,7 +21,14 @@ const [roomsData, setRoomsData] = useState({
 
 const handleChange = (e) => {
   const { name, value } = e.target;
-  setFormData({ ...formData, [name]: value });
+  //Contact allows only numbers
+  if (name === "Contact") {
+    const onlyNums = value.replace(/[^0-9]/g, '');
+    
+    setFormData({ ...formData, [name]: onlyNums });
+  } else {
+    setFormData({ ...formData, [name]: value });
+  }
 };
 
 const addRoomsInputs = (e) => {
@@ -136,6 +143,7 @@ const handelNext = () => {
                   type="date" 
                   name="DateTo" // Matches key in state
                   value={formData.DateTo}
+                  min={formData.DateFrom}
                   onChange={handleChange}
                   className="w-full border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900 transition-colors" 
                 />
@@ -181,6 +189,7 @@ const handelNext = () => {
               type="date" 
               name='DateTo'
               value={roomsData.DateTo}
+              min={roomsData.DateFrom}
               onChange={addRoomsInputs}
               className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900" />
             </div>
