@@ -42,6 +42,15 @@ class reservation {
       Description:other.Description|| "None"
     }
   }
+static globalBookingMapping(room, resId) {
+    return {
+      // SPREAD OPERATOR: Inherit standard room fields (RoomName, DateFrom, DateTo)
+      ...this.roomsSubCollection(room),
+      // RELATIONAL DATA: Map this booking to its parent reservation
+      parentReservationId: resId,
+    };
+  }
+  
 }
 
 module.exports = reservation;

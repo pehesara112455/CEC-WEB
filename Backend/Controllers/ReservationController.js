@@ -11,14 +11,19 @@ exports.testAdd = async (req, res) => {
     const resId = result.id; 
 
     // 1. ADD ROOMS (Correct)
-    if (Rooms && Array.isArray(Rooms) && Rooms.length > 0){
-      const roomRef = db.collection("reservations").doc(resId).collection("Rooms");
-      const roomPromises = Rooms.map(room => { 
-        return roomRef.add(reservation.roomsSubCollection(room))
-      });
-      await Promise.all(roomPromises);
-    }
-
+   if (Rooms && Array.isArray(Rooms) && Rooms.length > 0) {
+    
+    const roomSubRef = db.collection("reservations").doc(resId).collection("Rooms");
+    const globalBookingRef = db.collection('bookings');
+    const roomPromises = Rooms.map(async (room) => {
+        const subCollectionPromise = roomSubRef.add(reservation.roomsSubCollection(room));
+        const globalCollectionPromise = globalBookingRef.add(
+            reservation.globalBookingMapping(room, resId)
+        );
+        return Promise.all([subCollectionPromise, globalCollectionPromise]);
+    });
+    await Promise.all(roomPromises);
+}
     // 2. ADD MEALS (Correct)
     if (Meals && Array.isArray(Meals) && Meals.length > 0){
       const mealRef = db.collection("reservations").doc(resId).collection("Meals");
