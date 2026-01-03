@@ -1,26 +1,62 @@
 import React, { useState } from 'react';
-import { Plus, X, ChevronDown } from 'lucide-react';
-import NavBar from './AdminNav';
+import { Plus, X, ChevronDown, Contact } from 'lucide-react';
 import axios from 'axios';
 
-const AddReservation = () => {
+const AddReservation = ({onNext, savedData}) => {
   // 1. Initialize state to capture input values
-  const [formData, setFormData] = useState({
-    CompanyName: '',
-    Contact: '',
+  // 1. IMPROVED STATE: Always ensure Rooms is an array, even if savedData is empty
+const [formData, setFormData] = useState({
+  CompanyName: savedData?.CompanyName || '',
+  Contact: savedData?.Contact || '',
+  DateFrom: savedData?.DateFrom || '',
+  DateTo: savedData?.DateTo || '',
+  Rooms: savedData?.Rooms || [] // This ensures it is always an array []
+});
+
+const [roomsData, setRoomsData] = useState({
+  RoomName: '',
+  DateFrom: '',
+  DateTo: ''
+});
+
+const handleChange = (e) => {
+  const { name, value } = e.target;
+  setFormData({ ...formData, [name]: value });
+};
+
+const addRoomsInputs = (e) => {
+  const { name, value } = e.target;
+  setRoomsData({ ...roomsData, [name]: value });
+};
+
+const addRooms = () => {
+  
+  // 2. Safety Check: If for some reason Rooms is missing, create it as []
+  const currentRooms = formData.Rooms || [];
+
+  setFormData({
+    ...formData,
+    Rooms: [...currentRooms, roomsData]
+  });
+
+  // 3. Reset the inputs
+  setRoomsData({
+    RoomName: '',
     DateFrom: '',
     DateTo: ''
   });
+};
 
-  // 2. Handle input changes dynamically
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    // Spreads existing data and updates only the field being typed in
-    setFormData({ ...formData, [name]: value });
-  };
+const handelNext = () => {
+  /*if (!formData.CompanyName || !formData.Contact || !formData.DateFrom || !formData.DateTo) {
+    alert("Please fill in all client details before saving.");
+    return;
+  }*/
+  onNext(formData);
+};
 
   // 3. Function to send the data to the Node.js backend
-  const handleSubmit = async () => {
+  /*const handleSubmit = async () => {
     // Basic validation to ensure fields aren't empty
     if (!formData.CompanyName || !formData.Contact || !formData.DateFrom || !formData.DateTo) {
       alert("Please fill in all client details before saving.");
@@ -33,16 +69,16 @@ const AddReservation = () => {
       alert("Reservation saved successfully! ID: " + response.data);
       
       // Optional: Clear form after success
-      setFormData({ CompanyName: '', Contact: '', DateFrom: '', DateTo: '' });
+      setFormData({ CompanyName: '', Contact: '', DateFrom: '', DateTo: '', Rooms: [] });
     } catch (error) {
       console.error("Error sending data:", error);
       alert("Failed to save. Make sure your backend server is running and CORS is enabled.");
     }
-  };
+  };*/
 
   return (
     <div className='flex w-full min-h-screen bg-gray-50'>
-      <NavBar />
+      
       <div className="w-full mx-auto bg-white p-10 rounded-xl shadow-lg font-sans border border-gray-100 m-4">
         
         {/* SECTION 1: CLIENT DETAILS */}
@@ -118,27 +154,42 @@ const AddReservation = () => {
             <div className="flex items-center gap-4">
               <label className="w-36 text-gray-700 font-semibold">Room / Hall</label>
               <div className="relative flex-grow">
-                <select className="w-full appearance-none border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900 pr-10">
+                <select 
+                name='RoomName' 
+                value={roomsData.RoomName}
+                onChange={addRoomsInputs}
+                className="w-full appearance-none border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900 pr-10">
                   <option value="">Select</option>
-                  <option value="hall-a">Main Hall</option>
-                  <option value="room-1">Luxury Room</option>
+                  <option value="Main Hall">Main Hall</option>
+                  <option value="Luxury Room">Luxury Room</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
               </div>
             </div>
             <div className="flex items-center gap-4">
               <label className="w-36 text-gray-700 font-semibold">Date From</label>
-              <input type="date" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900" />
+              <input type="date"
+               name='DateFrom' 
+               value={roomsData.DateFrom}
+               onChange={addRoomsInputs}
+              className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900" />
             </div>
 
             <div className="flex items-center gap-4">
               <label className="w-36 text-gray-700 font-semibold">Date To</label>
-              <input type="date" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900" />
+              <input 
+              type="date" 
+              name='DateTo'
+              value={roomsData.DateTo}
+              onChange={addRoomsInputs}
+              className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-red-900" />
             </div>
           </div>
-
+          {/* Hall/Room Add Button*/}
           <div className="flex justify-end mb-8">
-            <button className="bg-red-900 text-white p-2.5 rounded-full hover:bg-red-800 shadow-md transition-transform hover:scale-110">
+            <button 
+            onClick={addRooms}
+            className="bg-red-900 text-white p-2.5 rounded-full hover:bg-red-800 shadow-md transition-transform hover:scale-110">
               <Plus className="w-6 h-6 stroke-[3px]" />
             </button>
           </div>
@@ -172,10 +223,10 @@ const AddReservation = () => {
         {/* Footer Actions */}
         <div className="mt-12 flex justify-end">
           <button 
-            onClick={handleSubmit} 
+            onClick={handelNext} 
             className="bg-red-900 text-white px-10 py-3 rounded-xl font-bold hover:bg-red-800 shadow-lg transition-all active:scale-95"
           >
-            Save & Next
+          Next
           </button>
         </div>
       </div>

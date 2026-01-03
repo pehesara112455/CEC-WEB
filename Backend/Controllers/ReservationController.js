@@ -4,24 +4,39 @@ const db = admin.firestore();
 
 exports.testAdd = async (req, res) => {
   try {
-    //Get the data from the frontend form
-    const { CompanyName, Contact, DateFrom, DateTo, rooms } = req.body;
+    const { CompanyName, Contact, DateFrom, DateTo, Rooms, Meals, Others } = req.body;
 
-    //Create a new instance (Pass the data as separate variables, not as one {obj})
     const myRes = new reservation(CompanyName, Contact, DateFrom, DateTo);
-
-    // 3. Save to Firebase using the name 'myRes' 
     const result = await db.collection('reservations').add(myRes.toFirestore());
+    const resId = result.id; 
 
-    //Add rooms......
-    const resId = result.id; // Assign the reference 
-    //Ensure 'rooms' exists and is a valid array
-    if (rooms && Array.isArray(rooms) && rooms.length > 0){
-      const roomRef = db.collection("reservations").doc(resId).collection("Rooms");// Create the reference
-      const resultRoom = rooms.map(room => { //Add each room to Firebase
+    // 1. ADD ROOMS (Correct)
+    if (Rooms && Array.isArray(Rooms) && Rooms.length > 0){
+      const roomRef = db.collection("reservations").doc(resId).collection("Rooms");
+      const roomPromises = Rooms.map(room => { 
         return roomRef.add(reservation.roomsSubCollection(room))
       });
-       await Promise.all(resultRoom);
+      await Promise.all(roomPromises);
+    }
+
+    // 2. ADD MEALS (Correct)
+    if (Meals && Array.isArray(Meals) && Meals.length > 0){
+      const mealRef = db.collection("reservations").doc(resId).collection("Meals");
+      const mealPromises = Meals.map(meal => { 
+        return mealRef.add(reservation.mealsSubCollection(meal))
+      });
+      await Promise.all(mealPromises);
+    }
+
+    // 3. ADD OTHERS (Fixed)
+    if (Others && Array.isArray(Others) && Others.length > 0){
+      // FIX: Changed "Meals" to "Others"
+      const otherRef = db.collection("reservations").doc(resId).collection("Others");
+      const otherPromises = Others.map(other => { 
+        // FIX: Ensure you use the correct model function for Others
+        return otherRef.add(reservation.othersSubCollection(other))
+      });
+      await Promise.all(otherPromises);
     }
 
     res.status(201).send(`Success! Document ID: ${result.id}`);

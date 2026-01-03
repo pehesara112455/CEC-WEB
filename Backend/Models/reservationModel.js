@@ -22,9 +22,24 @@ class reservation {
 
   static roomsSubCollection(room){
     return{
-      RoomName:room.name|| "None",
-      DateFrom:room.from|| 0,
-      DateTo:room.to|| 0
+      RoomName:room.RoomName|| "None",
+      DateFrom:room.DateFrom|| "None",
+      DateTo:room.DateTo|| "None"
+    }
+  }
+  static mealsSubCollection(meal){
+    return{
+      MealName:meal.MealName|| "None",
+      Quantity:meal.Quantity || 0,
+      Amount:meal.Amount|| 0,
+      Description:meal.Description|| "None"
+    }
+  }
+  static othersSubCollection(other){
+    return{
+      ItemName:other.ItemName|| "None",
+      Amount:other.Amount|| 0,
+      Description:other.Description|| "None"
     }
   }
 }
