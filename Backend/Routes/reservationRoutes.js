@@ -9,6 +9,11 @@ const availabilityController = require('../Controllers/check-availability');
 router.post('/add-reservation', resController.testAdd);
 router.get('/check-availability', availabilityController.getOccupiedRooms);
 router.get('/get-all-rooms', resController.getAllRooms);
-
+router.get('/get-all-reservations', resController.getAllReservations);
+router.patch('/update-reservation/:id', resController.updateReservation);
+router.delete('/delete-reservation/:id', resController.deleteReservation);
+router.get('/get-reservation-rooms/:id', resController.getReservationRooms);
+router.get('/get-reservation-meals/:id', resController.getReservationMeals);
+router.get('/get-reservation-others/:id', resController.getReservationOthers);
 
 module.exports = router;

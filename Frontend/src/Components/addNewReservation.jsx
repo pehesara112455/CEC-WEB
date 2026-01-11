@@ -31,7 +31,6 @@ const AddReservation = ({ onNext, savedData }) => {
     const fetchRoomPrices = async () => {
       try {
         const response = await axios.get('http://localhost:5000/get-all-rooms');
-        // We ensure response data is an array before saving
         setDbRooms(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error("Failed to load room prices:", error.message);
@@ -65,10 +64,12 @@ const AddReservation = ({ onNext, savedData }) => {
     const s = new Date(start);
     const e = new Date(end);
     const diffTime = e.getTime() - s.getTime();
-    // We add +1 because booking from Monday to Monday is 1 day
     const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
     return days > 0 ? days * price : 0;
   };
+
+  // NEW: Calculate the Grand Total of all selected rooms
+  const grandTotal = formData.Rooms.reduce((sum, room) => sum + (Number(room.Amount) || 0), 0);
 
   // INPUT HANDLER: Updates room selection and calculates price immediately
   const addRoomsInputs = (e) => {
@@ -77,13 +78,11 @@ const AddReservation = ({ onNext, savedData }) => {
     setRoomsData(prev => {
       const updated = { ...prev, [name]: value };
 
-      // Find the selected room in our database list to get its price
       if (name === 'RoomName') {
         const roomInfo = dbRooms.find(r => r.name === value);
         updated.PricePerDay = roomInfo ? roomInfo.amount : 0;
       }
 
-      // Auto-calculate the total for this room selection
       updated.Amount = calculateTotal(
         updated.PricePerDay, 
         updated.DateFrom || formData.DateFrom, 
@@ -93,18 +92,16 @@ const AddReservation = ({ onNext, savedData }) => {
     });
   };
 
-  // GENERAL HANDLER: For Company Name and Contact fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "Contact") {
-      const onlyNums = value.replace(/[^0-9]/g, ''); // Simple validation for numbers only
+      const onlyNums = value.replace(/[^0-9]/g, '');
       if (onlyNums.length <= 10) setFormData(prev => ({ ...prev, [name]: onlyNums }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  // ACTION: Moves room data from local state to the master formData table
   const addRooms = () => {
     if (!roomsData.RoomName || roomsData.Amount <= 0) {
       return alert("Please select a room and set valid dates.");
@@ -113,7 +110,6 @@ const AddReservation = ({ onNext, savedData }) => {
       ...prev,
       Rooms: [...(prev.Rooms || []), { ...roomsData }]
     }));
-    // Clear inputs for the next room
     setRoomsData({ RoomName: '', DateFrom: '', DateTo: '', PricePerDay: 0, Amount: 0 });
   };
 
@@ -124,7 +120,6 @@ const AddReservation = ({ onNext, savedData }) => {
     }));
   };
 
-  // Filter list to hide rooms that are already booked
   const availableOptions = dbRooms.filter(room => !occupiedRooms.includes(room.name));
 
   return (
@@ -216,7 +211,7 @@ const AddReservation = ({ onNext, savedData }) => {
                   <tr key={index} className={index % 2 === 0 ? "bg-[#F8F1F1]" : "bg-white"}>
                     <td className="py-3 px-4 font-semibold">{room.RoomName}</td>
                     <td className="py-3 px-4 text-center">LKR {(room.PricePerDay || 0).toLocaleString()}</td>
-                    <td className="py-3 px-4 text-gray-600">{room.DateFrom || formData.DateFrom} to {room.DateTo || formData.DateTo}</td>
+                    <td className="py-3 px-4 text-gray-600 italic">{room.DateFrom || formData.DateFrom} to {room.DateTo || formData.DateTo}</td>
                     <td className="py-3 px-4 font-bold text-red-900">LKR {(room.Amount || 0).toLocaleString()}</td>
                     <td className="py-3 px-4 text-right">
                       <X onClick={() => removeRoom(index)} className="w-5 h-5 cursor-pointer text-gray-400 hover:text-red-600" />
@@ -228,10 +223,10 @@ const AddReservation = ({ onNext, savedData }) => {
                 <tfoot className="bg-gray-100 border-t-2 border-gray-300">
                   <tr>
                     <td colSpan="3" className="py-4 px-4 text-right font-bold text-gray-700 uppercase text-sm">
-                      Reservation Grand Total:
+                      Total Room Cost:
                     </td>
                     <td className="py-4 px-4 font-black text-xl text-red-900">
-                      LKR {formData.Rooms.reduce((sum, room) => sum + (Number(room.Amount) || 0), 0).toLocaleString()}
+                      LKR {grandTotal.toLocaleString()}
                     </td>
                     <td></td>
                   </tr>
@@ -243,7 +238,10 @@ const AddReservation = ({ onNext, savedData }) => {
 
         {/* SUBMIT BUTTON */}
         <div className="mt-12 flex justify-end">
-          <button onClick={() => onNext(formData)} className="bg-red-900 text-white px-10 py-3 rounded-xl font-bold hover:bg-red-800 shadow-lg transition-all active:scale-95">
+          <button 
+            onClick={() => onNext({ ...formData, TotalRoomAmount: grandTotal })} 
+            className="bg-red-900 text-white px-10 py-3 rounded-xl font-bold hover:bg-red-800 shadow-lg transition-all active:scale-95"
+          >
             Next
           </button>
         </div>

@@ -1,6 +1,6 @@
 class reservation {
   // 1. The Constructor now accepts 4 parameters from the frontend
-  constructor(CompanyName, Contact, DateFrom, DateTo, displayId, TotalAmount, Status) {
+  constructor(CompanyName, Contact, DateFrom, DateTo, displayId, TotalAmount, Status, Advance) {
     // 2. We 'stick' the incoming data to the object using 'this'
     this.displayId = displayId;
     this.CompanyName = CompanyName;
@@ -9,6 +9,7 @@ class reservation {
     this.DateTo = DateTo;
     this.TotalAmount = TotalAmount;
     this.Status = Status;
+    this.Advance = Advance;
     this.createdAt = new Date(); // We still keep the timestamp automatic
   }
 
@@ -22,6 +23,7 @@ class reservation {
       DateTo: this.DateTo,
       createdAt: this.createdAt,
       TotalAmount: this.TotalAmount,
+      Advance:0,
       Status: "Pending",
     };
   }
@@ -30,7 +32,8 @@ class reservation {
     return{
       RoomName:room.RoomName|| "None",
       DateFrom:room.DateFrom|| "None",
-      DateTo:room.DateTo|| "None"
+      DateTo:room.DateTo|| "None",
+       Amount:room.Amount || "None"
     }
   }
   static mealsSubCollection(meal){
