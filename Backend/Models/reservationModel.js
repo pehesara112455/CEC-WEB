@@ -1,22 +1,28 @@
 class reservation {
   // 1. The Constructor now accepts 4 parameters from the frontend
-  constructor(CompanyName, Contact, DateFrom, DateTo) {
+  constructor(CompanyName, Contact, DateFrom, DateTo, displayId, TotalAmount, Status) {
     // 2. We 'stick' the incoming data to the object using 'this'
+    this.displayId = displayId;
     this.CompanyName = CompanyName;
     this.Contact = Contact;
     this.DateFrom = DateFrom;
     this.DateTo = DateTo;
+    this.TotalAmount = TotalAmount;
+    this.Status = Status;
     this.createdAt = new Date(); // We still keep the timestamp automatic
   }
 
   // 3. This method now returns the ACTUAL data stored in 'this'
   toFirestore() {
     return {
+      displayId: this.displayId,
       CompanyName: this.CompanyName,
       Contact: this.Contact,
       DateFrom: this.DateFrom,
       DateTo: this.DateTo,
-      createdAt: this.createdAt
+      createdAt: this.createdAt,
+      TotalAmount: this.TotalAmount,
+      Status: "Pending",
     };
   }
 
