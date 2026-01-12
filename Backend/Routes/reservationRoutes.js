@@ -15,5 +15,7 @@ router.delete('/delete-reservation/:id', resController.deleteReservation);
 router.get('/get-reservation-rooms/:id', resController.getReservationRooms);
 router.get('/get-reservation-meals/:id', resController.getReservationMeals);
 router.get('/get-reservation-others/:id', resController.getReservationOthers);
+router.get('/get-invoice-data/:id', resController.getInvoiceData);
+
 
 module.exports = router;

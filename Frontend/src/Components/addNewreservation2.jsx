@@ -246,7 +246,7 @@ const AddReservationStage2 = ({ onBack, onNext, savedData }) => {
         <div className="bg-red-50 p-8 rounded-2xl border-2 border-red-100 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-red-50">
-                    <p className="text-xs text-red-700 uppercase font-bold">Rooms & Halls (Stage 1)</p>
+                    <p className="text-xs text-red-700 uppercase font-bold">Rooms & Halls</p>
                     <p className="text-xl font-bold text-gray-800">LKR {totalRoomsCost.toLocaleString()}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-red-50">

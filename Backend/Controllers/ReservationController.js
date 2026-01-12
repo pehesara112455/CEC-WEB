@@ -302,3 +302,37 @@ exports.updateReservation = async (req, res) => {
     res.status(500).json({ error: "Failed to update: " + error.message });
   }
 };
+
+exports.getInvoiceData = async (req, res) => {
+  try {
+    const { id } = req.params; // This is 'RES-2026-003'
+    const resRef = db.collection('reservations').doc(id);
+    
+    // Fetch main document and all sub-collections at the same time
+    const [mainDoc, roomsSnap, mealsSnap, othersSnap] = await Promise.all([
+      resRef.get(),
+      resRef.collection('Rooms').get(),
+      resRef.collection('Meals').get(),
+      resRef.collection('Others').get()
+    ]);
+
+    if (!mainDoc.exists) {
+      return res.status(404).json({ error: "Reservation not found in database" });
+    }
+
+    // Combine the data into one object
+    const invoiceData = {
+      ...mainDoc.data(), // This includes CompanyName, DateFrom, TotalAmount, etc.
+      id: mainDoc.id,
+      Rooms: roomsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      Meals: mealsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      Others: othersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+    };
+
+    console.log("Sending data to frontend:", invoiceData); // Check your terminal to see this
+    res.status(200).json(invoiceData);
+  } catch (error) {
+    console.error("Backend Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};

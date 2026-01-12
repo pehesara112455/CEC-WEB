@@ -1,4 +1,4 @@
-// Nav-Bar.jsx
+// NavBar.jsx
 import React, { useState } from 'react';
 
 const NavBar = () => {
@@ -16,6 +16,7 @@ const NavBar = () => {
   return (
     <>
       {/* --- FLOATING OPEN BUTTON --- */}
+      {/* Shown only when the sidebar is closed */}
       {!isOpen && (
         <button 
           onClick={() => setIsOpen(true)}
@@ -29,10 +30,11 @@ const NavBar = () => {
       )}
 
       {/* --- SIDEBAR --- */}
+      {/* 'fixed' locks it to the window; 'z-50' ensures it stays on top */}
       <aside 
-        className={`${
+        className={`fixed top-0 left-0 h-screen z-50 ${
           isOpen ? 'w-64 opacity-100' : 'w-0 opacity-0 p-0 overflow-hidden'
-        } bg-[#8B0000] text-white flex flex-col font-sans shadow-xl h-screen transition-all duration-300 ease-in-out whitespace-nowrap`}
+        } bg-[#8B0000] text-white flex flex-col font-sans shadow-xl transition-all duration-300 ease-in-out whitespace-nowrap`}
       >
         {/* Header Section */}
         <div className="p-6 flex items-center gap-3">
@@ -56,14 +58,8 @@ const NavBar = () => {
 
         {/* Navigation Links */}
         <nav className="flex-1 px-8 py-4">
-          {/* CHANGED: 
-             1. Removed 'space-y-8' 
-             2. Added 'divide-y' (creates the borders)
-             3. Added 'divide-white/30' (makes lines white but semi-transparent for a cleaner look)
-          */}
           <ul className="divide-y divide-white/30">
             {menuItems.map((item, index) => (
-              // Added 'py-4' to add breathing room above and below the text relative to the lines
               <li key={index} className="py-4">
                 <a 
                   href={item.href} 
@@ -78,7 +74,8 @@ const NavBar = () => {
 
         {/* Logout Section */}
         <div className="p-6 flex justify-center pb-10">
-<button className="bg-white text-[#8B0000] font-bold py-2 px-10 rounded shadow hover:bg-[#EFB506] hover:text-[#8B0000] transition-colors duration-200">            LOG OUT
+          <button className="bg-white text-[#8B0000] font-bold py-2 px-10 rounded shadow hover:bg-[#EFB506] hover:text-[#8B0000] transition-colors duration-200"> 
+            LOG OUT
           </button>
         </div>
       </aside>
