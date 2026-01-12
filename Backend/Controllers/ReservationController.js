@@ -145,15 +145,46 @@ exports.updateReservation = async (req, res) => {
 // Controller to delete a reservation document
 exports.deleteReservation = async (req, res) => {
   try {
-    const { id } = req.params; // This is the displayId (e.g., RES-2026-002)
+    const { id } = req.params; // e.g., RES-2026-002
+    const batch = db.batch();
+    const resRef = db.collection('reservations').doc(id);
 
-    // Reference the document by its ID and delete it
-    await db.collection('reservations').doc(id).delete();
+    // 1. Delete the main Reservation document
+    batch.delete(resRef);
 
-    res.status(200).json({ message: `Reservation ${id} deleted successfully` });
+    // 2. Helper function to find and mark subcollection docs for deletion
+    const deleteSubcollection = async (subName) => {
+      const snapshot = await resRef.collection(subName).get();
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+    };
+
+    // 3. Queue up subcollection deletions
+    await deleteSubcollection('Rooms');
+    await deleteSubcollection('Meals');
+    await deleteSubcollection('Others');
+
+    // 4. Delete from global 'bookings' collection
+    // Note: Make sure the field name matches (you used 'reservationId' previously)
+    const bookingsSnapshot = await db.collection('bookings')
+      .where('reservationId', '==', id)
+      .get();
+
+    bookingsSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // 5. Commit all deletions at once
+    await batch.commit();
+
+    res.status(200).json({ 
+      message: `Reservation ${id}, subcollections, and global bookings deleted successfully.` 
+    });
+
   } catch (error) {
     console.error("Delete Error:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to delete: " + error.message });
   }
 };
 
@@ -195,57 +226,79 @@ exports.getReservationOthers = async (req, res) => {
 
 exports.updateReservation = async (req, res) => {
   try {
-    const { id } = req.params; // displayId (e.g., RES-2026-001)
-    // 1. Destructure the arrays and the top-level data
+    const { id } = req.params; // This is the reservationId (e.g., RES-2026-001)
     const { Rooms, Meals, Others, ...topLevelData } = req.body;
 
     const reservationRef = db.collection('reservations').doc(id);
     const batch = db.batch();
 
-    // 2. Update Top-Level Data in the batch
+    // 1. Update Top-Level Data
     batch.update(reservationRef, {
       ...topLevelData,
       updatedAt: new Date()
     });
 
-    /**
-     * HELPER FUNCTION: Sync Sub-collections
-     * It deletes all existing documents in a sub-collection and replaces them 
-     * with the new ones from your React state.
-     */
-    const syncSubCollection = async (collectionName, dataArray) => {
+    // 2. Sync Sub-collections (Meals & Others)
+    const syncStandardSub = async (collectionName, dataArray) => {
       const subRef = reservationRef.collection(collectionName);
       const snapshot = await subRef.get();
-      
-      // Mark old documents for deletion in the batch
       snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-      
-      // Mark new documents for creation in the batch
       if (dataArray && Array.isArray(dataArray)) {
         dataArray.forEach((item) => {
-          // We remove the 'id' field if it exists to let Firestore generate a fresh auto-ID
-          const { id, ...itemData } = item; 
-          const newDocRef = subRef.doc(); 
-          batch.set(newDocRef, itemData);
+          const { id, ...itemData } = item;
+          batch.set(subRef.doc(), itemData);
         });
       }
     };
 
-    // 3. Queue up the sync operations for all three sub-collections
-    // We use await here to fetch the snapshots, but changes are only saved at .commit()
-    await syncSubCollection('Rooms', Rooms);
-    await syncSubCollection('Meals', Meals);
-    await syncSubCollection('Others', Others);
+    // 3. SPECIAL SYNC: Rooms & Global Bookings
+    const syncRoomsAndBookings = async (roomsArray) => {
+      const roomSubRef = reservationRef.collection('Rooms');
+      const globalBookingRef = db.collection('bookings');
 
-    // 4. Commit all changes at once (Main doc + Deletions + Insertions)
+      // A. Delete old rooms from Sub-collection
+      const oldRoomsSnapshot = await roomSubRef.get();
+      oldRoomsSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
+
+      // B. Delete old records from Global Bookings where reservationId matches
+      const oldGlobalBookings = await globalBookingRef.where('reservationId', '==', id).get();
+      oldGlobalBookings.docs.forEach((doc) => batch.delete(doc.ref));
+
+      // C. Add new rooms to both places
+      if (roomsArray && Array.isArray(roomsArray)) {
+        roomsArray.forEach((room) => {
+          const { id: dummyId, ...roomData } = room;
+
+          // Add to Sub-collection
+          batch.set(roomSubRef.doc(), roomData);
+
+          // Add to Global Bookings (using your Model's mapping)
+          // Ensure you use the same structure as your Add function
+          batch.set(globalBookingRef.doc(), {
+            RoomName: roomData.RoomName,
+            DateFrom: roomData.DateFrom,
+            DateTo: roomData.DateTo,
+            reservationId: id, // Link back to this reservation
+            updatedAt: new Date()
+          });
+        });
+      }
+    };
+
+    // 4. Execute the syncs
+    await syncRoomsAndBookings(Rooms);
+    await syncStandardSub('Meals', Meals);
+    await syncStandardSub('Others', Others);
+
+    // 5. Commit all changes atomically
     await batch.commit();
 
     res.status(200).json({ 
-      message: "Reservation, Rooms, Meals, and Services updated successfully!" 
+      message: "Reservation and global availability updated successfully!" 
     });
 
   } catch (error) {
     console.error("Update Error:", error.message);
-    res.status(500).json({ error: "Failed to update database: " + error.message });
+    res.status(500).json({ error: "Failed to update: " + error.message });
   }
 };
