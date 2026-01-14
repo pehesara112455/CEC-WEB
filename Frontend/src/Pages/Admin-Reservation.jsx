@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios'; 
-import NavBar from '../Components/AdminNav'; // This is your sidebar component
+import NavBar from '../Components/AdminNav'; 
 import ReservationTable from '../Components/Reservation';
 import AddReservation from '../Components/addNewReservation';
 import AddReservationStage2 from '../Components/addNewreservation2';
@@ -10,7 +10,7 @@ import EditReservation2 from '../Components/Editreservation2';
 const ReservationsDashboard = () => {
   const [active, setActive] = useState("reservationTable");
   
-  // NEW: State to track if sidebar is open to adjust the layout margin
+  // SHARED STATE: Controls the sidebar width and the dashboard layout
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
   // State for Add Process
@@ -69,15 +69,20 @@ const ReservationsDashboard = () => {
   };
 
   return (
-    <div className="flex bg-gray-50 font-sans min-h-screen">
+    /* CORE FIX: 
+       1. 'h-screen' locks the app to the height of the screen.
+       2. 'overflow-hidden' prevents the body from scrolling.
+    */
+    <div className="flex bg-gray-50 font-sans h-screen overflow-hidden">
       
-      {/* 1. SIDEBAR (Fixed position) */}
-      {/* We pass setSidebarOpen so the sidebar can tell the dashboard when it opens/closes */}
+      {/* 3. SIDEBAR: It now sits inside a non-scrolling parent */}
       <NavBar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-      {/* 2. MAIN CONTENT AREA */}
-      {/* ml-64 (margin-left) is used only when the sidebar is open */}
-      <div className={`flex-grow p-6 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+      {/* 4. MAIN CONTENT AREA: 
+          FIX: 'h-full' and 'overflow-y-auto' makes ONLY this section scrollable.
+          The sidebar is a sibling to this div, so it stays fixed in place.
+      */}
+      <div className="flex-1 h-full overflow-y-auto p-6 transition-all duration-300 ease-in-out min-w-0">
         
         {/* VIEW 1: TABLE */}
         {active === "reservationTable" && (

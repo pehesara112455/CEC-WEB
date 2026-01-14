@@ -19,6 +19,7 @@ router.get('/get-reservation-others/:id', resController.getReservationOthers);
 router.get('/get-invoice-data/:id', resController.getInvoiceData);
 router.post('/add-client', addNewClientController.addClient);
 router.get('/get-all-clients', addNewClientController.getAllClients);
+router.delete('/delete-client/:id', addNewClientController.deleteClient);
 
 
 

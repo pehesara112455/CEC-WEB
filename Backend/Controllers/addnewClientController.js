@@ -69,3 +69,27 @@ exports.getAllClients = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch client list. " + error.message });
   }
 };
+
+// DELETE A CLIENT
+exports.deleteClient = async (req, res) => {
+  try {
+    const { id } = req.params; // Get the Client ID (e.g., CL-2026-001) from the URL
+
+    // 1. Check if the client exists before deleting
+    const clientDoc = db.collection('clientdetails').doc(id);
+    const doc = await clientDoc.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: "Client not found." });
+    }
+
+    // 2. Perform the deletion
+    await clientDoc.delete();
+
+    // 3. Send success response
+    res.status(200).json({ message: `Client ${id} deleted successfully.` });
+  } catch (error) {
+    console.error("Delete Error:", error);
+    res.status(500).json({ error: "Failed to delete client. " + error.message });
+  }
+};
