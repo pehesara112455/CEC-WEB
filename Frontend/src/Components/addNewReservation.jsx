@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, ChevronDown } from 'lucide-react';
+import { Plus, X, ChevronDown, PlusCircle } from 'lucide-react';
 import axios from 'axios';
+import AddNewClient from './AddNewClient'; // Ensure the path is correct
 
 const AddReservation = ({ onNext, savedData }) => {
-  // 1. MASTER STATE: Stores all data to be sent to the backend
+  // --- POPUP STATE ---
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+
+  const [clients, setClients] = useState([]);
+  
+  // 1. MASTER STATE
   const [formData, setFormData] = useState({
     CompanyName: savedData?.CompanyName || '',
     Contact: savedData?.Contact || '',
@@ -12,7 +18,7 @@ const AddReservation = ({ onNext, savedData }) => {
     Rooms: savedData?.Rooms || []
   });
 
-  // 2. LOCAL STATE: Temporary storage for one room before adding it to the table
+  // 2. LOCAL STATE for single room entry
   const [roomsData, setRoomsData] = useState({
     RoomName: '',
     DateFrom: '',
@@ -21,12 +27,22 @@ const AddReservation = ({ onNext, savedData }) => {
     Amount: 0
   });
 
-  // 3. DATA STATES: For room list and availability
+  // 3. DATA STATES
   const [dbRooms, setDbRooms] = useState([]); 
   const [occupiedRooms, setOccupiedRooms] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
 
-  // FETCH EFFECT: Gets the master list of rooms from your database
+  // --- FETCH CLIENTS FUNCTION ---
+  // Moved into a separate function so we can refresh it after adding a new client
+  const fetchClients = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/get-all-clients');
+      setClients(response.data);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchRoomPrices = async () => {
       try {
@@ -39,9 +55,10 @@ const AddReservation = ({ onNext, savedData }) => {
       }
     };
     fetchRoomPrices();
+    fetchClients();
   }, []);
 
-  // AVAILABILITY EFFECT: Checks occupied rooms when main dates change
+  // AVAILABILITY EFFECT
   useEffect(() => {
     const checkAvailability = async () => {
       if (formData.DateFrom && formData.DateTo) {
@@ -58,7 +75,7 @@ const AddReservation = ({ onNext, savedData }) => {
     checkAvailability();
   }, [formData.DateFrom, formData.DateTo]);
 
-  // MATH LOGIC: Calculates cost based on (Days * Daily Rate)
+  // MATH LOGIC
   const calculateTotal = (price, start, end) => {
     if (!price || !start || !end) return 0;
     const s = new Date(start);
@@ -68,21 +85,17 @@ const AddReservation = ({ onNext, savedData }) => {
     return days > 0 ? days * price : 0;
   };
 
-  // NEW: Calculate the Grand Total of all selected rooms
   const grandTotal = formData.Rooms.reduce((sum, room) => sum + (Number(room.Amount) || 0), 0);
 
-  // INPUT HANDLER: Updates room selection and calculates price immediately
+  // HANDLERS
   const addRoomsInputs = (e) => {
     const { name, value } = e.target;
-    
     setRoomsData(prev => {
       const updated = { ...prev, [name]: value };
-
       if (name === 'RoomName') {
         const roomInfo = dbRooms.find(r => r.name === value);
         updated.PricePerDay = roomInfo ? roomInfo.amount : 0;
       }
-
       updated.Amount = calculateTotal(
         updated.PricePerDay, 
         updated.DateFrom || formData.DateFrom, 
@@ -123,7 +136,7 @@ const AddReservation = ({ onNext, savedData }) => {
   const availableOptions = dbRooms.filter(room => !occupiedRooms.includes(room.name));
 
   return (
-    <div className='flex w-full min-h-screen bg-gray-50'>
+    <div className='flex w-full min-h-screen bg-gray-50 relative'>
       <div className="w-full mx-auto bg-white p-10 rounded-xl shadow-lg font-sans border border-gray-100 m-4">
         
         {/* CLIENT DETAILS SECTION */}
@@ -132,20 +145,46 @@ const AddReservation = ({ onNext, savedData }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
             <div className="flex items-center gap-4">
               <label className="w-36 text-gray-700 font-semibold">Company Name</label>
-              <input type="text" name="CompanyName" value={formData.CompanyName} onChange={handleChange} placeholder="Enter Company Name" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
+              
+              <div className="flex-grow flex items-center gap-2">
+                <select 
+                  name="CompanyName" 
+                  value={formData.CompanyName} 
+                  onChange={handleChange} 
+                  className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none bg-white cursor-pointer"
+                >
+                  <option value="">Select a Company</option>
+                  {clients.map((client) => (
+                    <option key={client.clientId} value={client.companyName}>
+                      {client.companyName}
+                    </option>
+                  ))}
+                </select>
+
+                {/* POPUP TRIGGER */}
+                <button 
+                  type="button"
+                  onClick={() => setIsClientModalOpen(true)} 
+                  className="text-gray-800 hover:text-red-900 transition-colors"
+                  title="Add New Client"
+                >
+                  <PlusCircle size={28} strokeWidth={1.5} />
+                </button>
+              </div>
             </div>
+            {/* Contact, From, To fields... */}
             <div className="flex items-center gap-4">
-              <label className="w-36 text-gray-700 font-semibold">Contact</label>
-              <input type="text" name="Contact" value={formData.Contact} onChange={handleChange} placeholder="07XXXXXXXX" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
-            </div>
-            <div className="flex items-center gap-4">
-              <label className="w-36 text-gray-700 font-semibold">Overall - From</label>
-              <input type="date" name="DateFrom" value={formData.DateFrom} onChange={handleChange} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
-            </div>
-            <div className="flex items-center gap-4">
-              <label className="w-36 text-gray-700 font-semibold">Overall - To</label>
-              <input type="date" name="DateTo" value={formData.DateTo} min={formData.DateFrom} onChange={handleChange} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
-            </div>
+               <label className="w-36 text-gray-700 font-semibold">Contact</label>
+               <input type="text" name="Contact" value={formData.Contact} onChange={handleChange} placeholder="07XXXXXXXX" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
+             </div>
+             <div className="flex items-center gap-4">
+               <label className="w-36 text-gray-700 font-semibold">Overall - From</label>
+               <input type="date" name="DateFrom" value={formData.DateFrom} onChange={handleChange} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
+             </div>
+             <div className="flex items-center gap-4">
+               <label className="w-36 text-gray-700 font-semibold">Overall - To</label>
+               <input type="date" name="DateTo" value={formData.DateTo} min={formData.DateFrom} onChange={handleChange} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
+             </div>
           </div>
         </section>
 
@@ -153,87 +192,78 @@ const AddReservation = ({ onNext, savedData }) => {
 
         {/* ROOM SELECTION SECTION */}
         <section>
+          {/* ... (Rooms & Halls Table logic from your previous version) ... */}
           <h2 className="text-xl font-bold text-red-900 mb-8 uppercase tracking-wide">Rooms and Halls</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-6">
-            <div className="flex items-center gap-4">
-              <label className="w-36 text-gray-700 font-semibold">Room / Hall</label>
-              <div className="relative flex-grow">
-                <select name='RoomName' value={roomsData.RoomName} onChange={addRoomsInputs} disabled={isLoading || !formData.DateFrom} className="w-full appearance-none border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none pr-10">
-                  <option value="">{isLoading ? "Fetching..." : !formData.DateFrom ? "Set Overall Dates First" : "Select Available Room"}</option>
-                  {availableOptions.map(room => (
-                    <option key={room.name} value={room.name}>
-                        {room.name} (LKR {room.amount?.toLocaleString()})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <label className="w-44 text-red-900 font-bold uppercase text-sm italic">Est. Room Total</label>
-              <div className="text-2xl font-black text-red-900">
-                LKR {(roomsData.Amount || 0).toLocaleString()}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <label className="w-36 text-gray-700 font-semibold">Room Date From</label>
-              <input type="date" name='DateFrom' value={roomsData.DateFrom} min={formData.DateFrom} max={formData.DateTo} onChange={addRoomsInputs} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
-            </div>
-
-            <div className="flex items-center gap-4">
-              <label className="w-36 text-gray-700 font-semibold">Room Date To</label>
-              <input type="date" name='DateTo' value={roomsData.DateTo} min={roomsData.DateFrom || formData.DateFrom} max={formData.DateTo} onChange={addRoomsInputs} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
-            </div>
-          </div>
-
-          <div className="flex justify-end mb-8">
-            <button onClick={addRooms} className="bg-red-900 text-white p-2.5 rounded-full hover:bg-red-800 shadow-md transition-transform hover:scale-110">
-              <Plus className="w-6 h-6 stroke-[3px]" />
-            </button>
-          </div>
-
-          {/* ADDED ROOMS TABLE */}
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 text-gray-900 uppercase text-xs">
-                <tr className="font-bold border-b-2 border-gray-100">
-                  <th className="py-3 px-4">Room/ Hall</th>
-                  <th className="py-3 px-4 text-center">Daily Rate</th>
-                  <th className="py-3 px-4">Period</th>
-                  <th className="py-3 px-4 text-red-900">Total Amount</th>
-                  <th className="py-3 px-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {formData.Rooms.map((room, index) => (
-                  <tr key={index} className={index % 2 === 0 ? "bg-[#F8F1F1]" : "bg-white"}>
-                    <td className="py-3 px-4 font-semibold">{room.RoomName}</td>
-                    <td className="py-3 px-4 text-center">LKR {(room.PricePerDay || 0).toLocaleString()}</td>
-                    <td className="py-3 px-4 text-gray-600 italic">{room.DateFrom || formData.DateFrom} to {room.DateTo || formData.DateTo}</td>
-                    <td className="py-3 px-4 font-bold text-red-900">LKR {(room.Amount || 0).toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right">
-                      <X onClick={() => removeRoom(index)} className="w-5 h-5 cursor-pointer text-gray-400 hover:text-red-600" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              {formData.Rooms.length > 0 && (
-                <tfoot className="bg-gray-100 border-t-2 border-gray-300">
-                  <tr>
-                    <td colSpan="3" className="py-4 px-4 text-right font-bold text-gray-700 uppercase text-sm">
-                      Total Room Cost:
-                    </td>
-                    <td className="py-4 px-4 font-black text-xl text-red-900">
-                      LKR {grandTotal.toLocaleString()}
-                    </td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-6">
+             <div className="flex items-center gap-4">
+               <label className="w-36 text-gray-700 font-semibold">Room / Hall</label>
+               <div className="relative flex-grow">
+                 <select name='RoomName' value={roomsData.RoomName} onChange={addRoomsInputs} disabled={isLoading || !formData.DateFrom} className="w-full appearance-none border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none pr-10">
+                   <option value="">{isLoading ? "Fetching..." : !formData.DateFrom ? "Set Overall Dates First" : "Select Available Room"}</option>
+                   {availableOptions.map(room => (
+                     <option key={room.name} value={room.name}>
+                         {room.name} (LKR {room.amount?.toLocaleString()})
+                     </option>
+                   ))}
+                 </select>
+                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+               </div>
+             </div>
+             <div className="flex items-center gap-4">
+               <label className="w-44 text-red-900 font-bold uppercase text-sm italic">Est. Room Total</label>
+               <div className="text-2xl font-black text-red-900">
+                 LKR {(roomsData.Amount || 0).toLocaleString()}
+               </div>
+             </div>
+             <div className="flex items-center gap-4">
+               <label className="w-36 text-gray-700 font-semibold">Room Date From</label>
+               <input type="date" name='DateFrom' value={roomsData.DateFrom} min={formData.DateFrom} max={formData.DateTo} onChange={addRoomsInputs} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
+             </div>
+             <div className="flex items-center gap-4">
+               <label className="w-36 text-gray-700 font-semibold">Room Date To</label>
+               <input type="date" name='DateTo' value={roomsData.DateTo} min={roomsData.DateFrom || formData.DateFrom} max={formData.DateTo} onChange={addRoomsInputs} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
+             </div>
+           </div>
+           <div className="flex justify-end mb-8">
+             <button onClick={addRooms} className="bg-red-900 text-white p-2.5 rounded-full hover:bg-red-800 shadow-md transition-transform hover:scale-110">
+               <Plus className="w-6 h-6 stroke-[3px]" />
+             </button>
+           </div>
+           <div className="overflow-hidden rounded-lg border border-gray-200">
+             <table className="w-full text-left">
+               <thead className="bg-gray-50 text-gray-900 uppercase text-xs">
+                 <tr className="font-bold border-b-2 border-gray-100">
+                   <th className="py-3 px-4">Room/ Hall</th>
+                   <th className="py-3 px-4 text-center">Daily Rate</th>
+                   <th className="py-3 px-4">Period</th>
+                   <th className="py-3 px-4 text-red-900">Total Amount</th>
+                   <th className="py-3 px-4"></th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {formData.Rooms.map((room, index) => (
+                   <tr key={index} className={index % 2 === 0 ? "bg-[#F8F1F1]" : "bg-white"}>
+                     <td className="py-3 px-4 font-semibold">{room.RoomName}</td>
+                     <td className="py-3 px-4 text-center">LKR {(room.PricePerDay || 0).toLocaleString()}</td>
+                     <td className="py-3 px-4 text-gray-600 italic">{room.DateFrom || formData.DateFrom} to {room.DateTo || formData.DateTo}</td>
+                     <td className="py-3 px-4 font-bold text-red-900">LKR {(room.Amount || 0).toLocaleString()}</td>
+                     <td className="py-3 px-4 text-right">
+                       <X onClick={() => removeRoom(index)} className="w-5 h-5 cursor-pointer text-gray-400 hover:text-red-600" />
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+               {formData.Rooms.length > 0 && (
+                 <tfoot className="bg-gray-100 border-t-2 border-gray-300">
+                   <tr>
+                     <td colSpan="3" className="py-4 px-4 text-right font-bold text-gray-700 uppercase text-sm">Total Room Cost:</td>
+                     <td className="py-4 px-4 font-black text-xl text-red-900">LKR {grandTotal.toLocaleString()}</td>
+                     <td></td>
+                   </tr>
+                 </tfoot>
+               )}
+             </table>
+           </div>
         </section>
 
         {/* SUBMIT BUTTON */}
@@ -246,6 +276,28 @@ const AddReservation = ({ onNext, savedData }) => {
           </button>
         </div>
       </div>
+
+      {/* --- MODAL POPUP --- */}
+      {isClientModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+            
+            {/* CLOSE BUTTON */}
+            <button 
+              onClick={() => setIsClientModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-gray-400 hover:text-red-900 transition-colors z-10"
+            >
+              <X size={28} strokeWidth={2.5} />
+            </button>
+
+            {/* MODAL FORM */}
+            <AddNewClient onSuccess={() => {
+              setIsClientModalOpen(false); // Close popup
+              fetchClients(); // Refresh the list automatically!
+            }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

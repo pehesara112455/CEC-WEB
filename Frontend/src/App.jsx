@@ -9,6 +9,7 @@ import AddReservation from './Components/addNewReservation.jsx';
 import AddReservationStage2 from './Components/addNewreservation2.jsx';
 import EditReservation from './Components/Editreservation.jsx';
 import EditReservationStage2 from './Components/Editreservation2.jsx';
+import AddNewClient from './Components/AddNewClient.jsx';
 
 function App() {
   return (
@@ -20,6 +21,8 @@ function App() {
       <Route path="/addReservationStage2" element={<AddReservationStage2 />} />
       <Route path="/editReservation" element={<EditReservation />} />
       <Route path="/editReservationStage2" element={<EditReservationStage2 />} />
+      <Route path="/addNewClient" element={<AddNewClient />} />
+
     </Routes>
    </BrowserRouter>
     

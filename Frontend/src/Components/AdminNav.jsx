@@ -5,7 +5,7 @@ const NavBar = () => {
   const [isOpen, setIsOpen] = useState(true);
 
   const menuItems = [
-    { name: 'RESERVATIONS', href: '#' },
+    { name: 'RESERVATIONS', href: '/reservation' },
     { name: 'ROOMS & HALLS', href: '#' },
     { name: 'CLIENT DETAILS', href: '#' },
     { name: 'BLOG POSTS', href: '#' },
