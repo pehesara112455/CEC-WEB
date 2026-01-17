@@ -1,5 +1,7 @@
 // Nav-Bar.jsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -8,7 +10,7 @@ const NavBar = () => {
     { name: 'RESERVATIONS', href: '#' },
     { name: 'ROOMS & HALLS', href: '#' },
     { name: 'CLIENT DETAILS', href: '#' },
-    { name: 'BLOG POSTS', href: '#' },
+    { name: 'BLOG POSTS', path: '/blog' },
     { name: 'SERVICES', href: '#' },
     { name: 'DONATIONS', href: '#' },
   ];
