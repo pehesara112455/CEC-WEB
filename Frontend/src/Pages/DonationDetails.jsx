@@ -37,6 +37,7 @@ const DonationDetails = () => {
   const itemsPerPage = 5;
 
   // FIREBASE: Fetch Data
+  // NOTE: orderBy("date", "desc") ensures the newest dates appear first in the table
   useEffect(() => {
     const q = query(collection(db, "donations"), orderBy("date", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -74,9 +75,9 @@ const DonationDetails = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // --- EDIT: OPEN MODAL FOR ADDING ---
+  // --- OPEN MODAL FOR ADDING ---
   const handleOpenAddModal = () => {
-    setEditingId(null); // Clear edit ID
+    setEditingId(null); 
     setFormData({
         name: '', 
         country: '', 
@@ -87,11 +88,11 @@ const DonationDetails = () => {
     setIsModalOpen(true);
   };
 
-  // --- EDIT: OPEN MODAL FOR EDITING ---
+  // --- OPEN MODAL FOR EDITING ---
   const handleEdit = (item) => {
-    setEditingId(item.id); // Set the ID we are editing
+    setEditingId(item.id); 
     
-    // Remove "Rs." prefix if it exists so it shows nicely in the number input
+    // Remove "Rs." prefix for the input field
     const cleanAmount = item.amount.toString().replace(/Rs\.\s?|Rs/gi, '');
 
     setFormData({
@@ -104,34 +105,36 @@ const DonationDetails = () => {
     setIsModalOpen(true);
   };
 
-  // --- FIREBASE: SUBMIT (HANDLES BOTH ADD AND UPDATE) ---
+  // --- FIREBASE: SUBMIT ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Format amount with Rs.
     const formattedAmount = formData.amount.toLowerCase().startsWith('rs') 
         ? formData.amount 
         : `Rs.${formData.amount}`;
 
+    // Prepare data object
+    const payload = {
+        name: formData.name,
+        country: formData.country,
+        contact: formData.contact,
+        date: formData.date,
+        amount: formattedAmount,
+        // Optional: Store creation time to help with sorting if needed later
+        createdAt: new Date().toISOString() 
+    };
+
     try {
         if (editingId) {
-            // --- UPDATE EXISTING DOCUMENT ---
+            // Update
             const docRef = doc(db, "donations", editingId);
-            await updateDoc(docRef, {
-                name: formData.name,
-                country: formData.country,
-                contact: formData.contact,
-                date: formData.date,
-                amount: formattedAmount
-            });
+            // We remove createdAt from update to preserve original creation time
+            const { createdAt, ...updateData } = payload; 
+            await updateDoc(docRef, updateData);
         } else {
-            // --- CREATE NEW DOCUMENT ---
-            await addDoc(collection(db, "donations"), {
-                name: formData.name,
-                country: formData.country,
-                contact: formData.contact,
-                date: formData.date,
-                amount: formattedAmount
-            });
+            // Create
+            await addDoc(collection(db, "donations"), payload);
         }
 
         // Reset and Close
@@ -139,7 +142,7 @@ const DonationDetails = () => {
         setEditingId(null);
         setFormData({ name: '', country: '', contact: '', date: '', amount: '' });
         setSearchTerm(''); 
-        setCurrentPage(1);
+        setCurrentPage(1); // Reset to page 1 to see the new entry at top
 
     } catch (error) {
         console.error("Error saving document: ", error);
@@ -314,10 +317,10 @@ const DonationDetails = () => {
         )}
       </div>
 
-      {/* --- POPUP MODAL (STYLED LIKE SERVICES) --- */}
+      {/* --- POPUP MODAL (STYLED EXACTLY LIKE SERVICES) --- */}
       {isModalOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-            {/* Backdrop */}
+            {/* Backdrop with Blur */}
             <div 
                 className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
                 onClick={() => setIsModalOpen(false)}
@@ -334,10 +337,12 @@ const DonationDetails = () => {
                 </button>
 
                 <div className="p-8">
+                    {/* Header */}
                     <h3 className="text-2xl font-bold text-[#8B0000] text-center mb-6 uppercase tracking-tight">
                         {editingId ? 'EDIT DONATION' : 'ADD NEW DONATION'}
                     </h3>
 
+                    {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4 max-h-[65vh] overflow-y-auto px-1">
                         
                         <div>
@@ -405,6 +410,7 @@ const DonationDetails = () => {
                             />
                         </div>
 
+                        {/* Buttons (Services Style) */}
                         <div className="flex gap-4 mt-8 pt-4">
                             <button 
                                 type="button" 
