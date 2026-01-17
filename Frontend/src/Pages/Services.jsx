@@ -37,8 +37,9 @@ const Services = () => {
   });
 
   // --- FIREBASE: READ DATA ---
+  // UPDATED: Now sorts by 'createdAt' descending (Newest first)
   useEffect(() => {
-    const q = query(collection(db, "services"), orderBy("serviceName", "asc"));
+    const q = query(collection(db, "services"), orderBy("createdAt", "desc"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const dataList = snapshot.docs.map(doc => ({
@@ -121,16 +122,26 @@ const Services = () => {
   // --- FIREBASE: CREATE & UPDATE ---
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Create the base payload from form data
+    const payload = { ...formData };
+
     try {
         if (editingId) {
+            // Update: We do NOT add createdAt here to preserve original date
             const docRef = doc(db, "services", editingId);
-            await updateDoc(docRef, formData);
+            await updateDoc(docRef, payload);
         } else {
-            await addDoc(collection(db, "services"), formData);
+            // Create: Add the timestamp so we can sort by "Newest First"
+            payload.createdAt = new Date().toISOString(); 
+            await addDoc(collection(db, "services"), payload);
         }
+        
         setIsModalOpen(false);
         setEditingId(null);
         handleClear();
+        setCurrentPage(1); // Go to first page to see the new item
+
     } catch (error) {
         console.error("Error saving service: ", error);
         alert("Error saving service");
@@ -293,7 +304,7 @@ const Services = () => {
         </div>
       </div>
 
-      {/* --- MODAL SECTION (Kept the nice style from previous request) --- */}
+      {/* --- MODAL SECTION --- */}
       {isModalOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <div 
