@@ -7,7 +7,7 @@ import {
   onSnapshot, 
   addDoc, 
   deleteDoc,
-  updateDoc, // <--- EDIT: Added this import
+  updateDoc, 
   doc,
   query, 
   orderBy 
@@ -22,7 +22,7 @@ const DonationDetails = () => {
 
   // --- MODAL & FORM STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null); // <--- EDIT: Track ID for editing
+  const [editingId, setEditingId] = useState(null); 
   
   const [formData, setFormData] = useState({
     name: '',
@@ -272,7 +272,7 @@ const DonationDetails = () => {
             </div>
         </div>
 
-        {/* --- PAGINATION (UNCHANGED) --- */}
+        {/* --- PAGINATION --- */}
         {totalPages > 1 && (
             <div className="mt-8 flex items-center justify-center gap-4">
                 <button
@@ -314,110 +314,114 @@ const DonationDetails = () => {
         )}
       </div>
 
-      {/* --- POPUP MODAL --- */}
+      {/* --- POPUP MODAL (STYLED LIKE SERVICES) --- */}
       {isModalOpen && (
-        <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4"
-            style={{ backdropFilter: 'blur(5px)' }}
-        >
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden animate-fade-in-up">
-                {/* Modal Header */}
-                <div className="bg-[#8B0000] p-4 flex justify-between items-center">
-                    {/* EDIT: Dynamic Title */}
-                    <h2 className="text-white font-bold text-lg">
-                        {editingId ? 'EDIT DONATION' : 'ADD NEW DONATION'}
-                    </h2>
-                    <button onClick={() => setIsModalOpen(false)} className="text-white hover:text-gray-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div 
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+                onClick={() => setIsModalOpen(false)}
+            ></div>
 
-                {/* Modal Body */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                        <input 
-                            required
-                            type="text" 
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-[#8B0000] focus:border-[#8B0000] outline-none"
-                            placeholder="e.g. John Doe"
-                        />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
+            {/* Modal Content */}
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative z-110 animate-in zoom-in-95 slide-in-from-bottom-8 fade-in duration-500 ease-out">
+                {/* Close Button */}
+                <button 
+                    onClick={() => setIsModalOpen(false)} 
+                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 text-3xl"
+                >
+                    &times;
+                </button>
+
+                <div className="p-8">
+                    <h3 className="text-2xl font-bold text-[#8B0000] text-center mb-6 uppercase tracking-tight">
+                        {editingId ? 'EDIT DONATION' : 'ADD NEW DONATION'}
+                    </h3>
+
+                    <form onSubmit={handleSubmit} className="space-y-4 max-h-[65vh] overflow-y-auto px-1">
+                        
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                            <label className="block text-[#8B0000] font-bold mb-1">Full Name *</label>
                             <input 
                                 required
                                 type="text" 
-                                name="country"
-                                value={formData.country}
+                                name="name"
+                                value={formData.name}
                                 onChange={handleInputChange}
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-[#8B0000] focus:border-[#8B0000] outline-none"
-                                placeholder="e.g. USA"
+                                className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                placeholder="e.g. John Doe"
                             />
                         </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[#8B0000] font-bold mb-1">Country *</label>
+                                <input 
+                                    required
+                                    type="text" 
+                                    name="country"
+                                    value={formData.country}
+                                    onChange={handleInputChange}
+                                    className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                    placeholder="e.g. USA"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[#8B0000] font-bold mb-1">Date *</label>
+                                <input 
+                                    required
+                                    type="date" 
+                                    name="date"
+                                    value={formData.date}
+                                    onChange={handleInputChange}
+                                    className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                />
+                            </div>
+                        </div>
+
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <label className="block text-[#8B0000] font-bold mb-1">Contact Number *</label>
                             <input 
                                 required
-                                type="date" 
-                                name="date"
-                                value={formData.date}
+                                type="text" 
+                                name="contact"
+                                value={formData.contact}
                                 onChange={handleInputChange}
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-[#8B0000] focus:border-[#8B0000] outline-none"
+                                className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                placeholder="e.g. +1 234 567 890"
                             />
                         </div>
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-                        <input 
-                            required
-                            type="text" 
-                            name="contact"
-                            value={formData.contact}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-[#8B0000] focus:border-[#8B0000] outline-none"
-                            placeholder="e.g. +1 234 567 890"
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-[#8B0000] font-bold mb-1">Amount (Rs) *</label>
+                            <input 
+                                required
+                                type="number" 
+                                name="amount"
+                                value={formData.amount}
+                                onChange={handleInputChange}
+                                className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                placeholder="e.g. 5000"
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Amount (Rs)</label>
-                        <input 
-                            required
-                            type="number" 
-                            name="amount"
-                            value={formData.amount}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-[#8B0000] focus:border-[#8B0000] outline-none"
-                            placeholder="e.g. 5000"
-                        />
-                    </div>
-
-                    <div className="flex gap-3 mt-6">
-                        <button 
-                            type="button" 
-                            onClick={() => setIsModalOpen(false)}
-                            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            type="submit" 
-                            className="flex-1 px-4 py-2 bg-[#8B0000] text-white rounded hover:bg-red-900 transition-colors"
-                        >
-                            {/* EDIT: Dynamic Button Text */}
-                            {editingId ? 'Update Donation' : 'Save Donation'}
-                        </button>
-                    </div>
-                </form>
+                        <div className="flex gap-4 mt-8 pt-4">
+                            <button 
+                                type="button" 
+                                onClick={() => setIsModalOpen(false)}
+                                className="flex-1 bg-orange-500 text-white font-bold py-2.5 rounded-lg active:scale-95 shadow hover:bg-orange-600 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                className="flex-1 bg-[#8B0000] text-white font-bold py-2.5 rounded-lg active:scale-95 shadow hover:bg-red-800 transition-colors"
+                            >
+                                {editingId ? 'Update' : 'Submit'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
       )}
