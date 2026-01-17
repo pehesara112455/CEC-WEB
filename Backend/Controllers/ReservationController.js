@@ -336,3 +336,16 @@ exports.getInvoiceData = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.getAllHalls = async (req, res) => {
+  try {
+    const snapshot = await db.collection('halls').get(); //
+    const halls = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    res.status(200).json(halls);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch halls: " + error.message });
+  }
+};

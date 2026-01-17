@@ -10,6 +10,7 @@ const addNewClientController = require('../Controllers/addnewClientController')
 router.post('/add-reservation', resController.testAdd);
 router.get('/check-availability', availabilityController.getOccupiedRooms);
 router.get('/get-all-rooms', resController.getAllRooms);
+router.get('/get-all-halls', resController.getAllHalls);
 router.get('/get-all-reservations', resController.getAllReservations);
 router.patch('/update-reservation/:id', resController.updateReservation);
 router.delete('/delete-reservation/:id', resController.deleteReservation);

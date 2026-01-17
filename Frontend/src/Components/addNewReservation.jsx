@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, ChevronDown, PlusCircle } from 'lucide-react';
 import axios from 'axios';
-import AddNewClient from './AddNewClient'; // Ensure the path is correct
+import AddNewClient from './AddNewClient'; 
 
 const AddReservation = ({ onNext, savedData }) => {
-  // --- POPUP STATE ---
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-
   const [clients, setClients] = useState([]);
-  
-  // 1. MASTER STATE
+  const [dbRooms, setDbRooms] = useState([]); 
+  const [occupiedRooms, setOccupiedRooms] = useState([]); 
+  const [isLoading, setIsLoading] = useState(true);
+
   const [formData, setFormData] = useState({
     CompanyName: savedData?.CompanyName || '',
     Contact: savedData?.Contact || '',
@@ -18,7 +18,6 @@ const AddReservation = ({ onNext, savedData }) => {
     Rooms: savedData?.Rooms || []
   });
 
-  // 2. LOCAL STATE for single room entry
   const [roomsData, setRoomsData] = useState({
     RoomName: '',
     DateFrom: '',
@@ -27,13 +26,6 @@ const AddReservation = ({ onNext, savedData }) => {
     Amount: 0
   });
 
-  // 3. DATA STATES
-  const [dbRooms, setDbRooms] = useState([]); 
-  const [occupiedRooms, setOccupiedRooms] = useState([]); 
-  const [isLoading, setIsLoading] = useState(true);
-
-  // --- FETCH CLIENTS FUNCTION ---
-  // Moved into a separate function so we can refresh it after adding a new client
   const fetchClients = async () => {
     try {
       const response = await axios.get('http://localhost:5000/get-all-clients');
@@ -43,22 +35,33 @@ const AddReservation = ({ onNext, savedData }) => {
     }
   };
 
+  // --- UPDATED FETCH LOGIC ---
   useEffect(() => {
-    const fetchRoomPrices = async () => {
+    const fetchAllAccommodations = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/get-all-rooms');
-        setDbRooms(Array.isArray(response.data) ? response.data : []);
+        // Fetch both Rooms and Halls simultaneously
+        const [roomsRes, hallsRes] = await Promise.all([
+          axios.get('http://localhost:5000/get-all-rooms'),
+          axios.get('http://localhost:5000/get-all-halls')
+        ]);
+
+        const rooms = Array.isArray(roomsRes.data) ? roomsRes.data : [];
+        const halls = Array.isArray(hallsRes.data) ? hallsRes.data : [];
+
+        // Combine them into one array for the dropdown
+        setDbRooms([...rooms, ...halls]);
       } catch (error) {
-        console.error("Failed to load room prices:", error.message);
+        console.error("Failed to load accommodations:", error.message);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchRoomPrices();
+    
+    fetchAllAccommodations();
     fetchClients();
   }, []);
 
-  // AVAILABILITY EFFECT
+  // ... (Availability effect and Math logic remain the same)
   useEffect(() => {
     const checkAvailability = async () => {
       if (formData.DateFrom && formData.DateTo) {
@@ -75,7 +78,6 @@ const AddReservation = ({ onNext, savedData }) => {
     checkAvailability();
   }, [formData.DateFrom, formData.DateTo]);
 
-  // MATH LOGIC
   const calculateTotal = (price, start, end) => {
     if (!price || !start || !end) return 0;
     const s = new Date(start);
@@ -87,13 +89,13 @@ const AddReservation = ({ onNext, savedData }) => {
 
   const grandTotal = formData.Rooms.reduce((sum, room) => sum + (Number(room.Amount) || 0), 0);
 
-  // HANDLERS
   const addRoomsInputs = (e) => {
     const { name, value } = e.target;
     setRoomsData(prev => {
       const updated = { ...prev, [name]: value };
       if (name === 'RoomName') {
         const roomInfo = dbRooms.find(r => r.name === value);
+        // Matching 'amount' field from your Firestore Halls screenshot
         updated.PricePerDay = roomInfo ? roomInfo.amount : 0;
       }
       updated.Amount = calculateTotal(
@@ -117,7 +119,7 @@ const AddReservation = ({ onNext, savedData }) => {
 
   const addRooms = () => {
     if (!roomsData.RoomName || roomsData.Amount <= 0) {
-      return alert("Please select a room and set valid dates.");
+      return alert("Please select a room/hall and set valid dates.");
     }
     setFormData(prev => ({
       ...prev,
@@ -145,7 +147,6 @@ const AddReservation = ({ onNext, savedData }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
             <div className="flex items-center gap-4">
               <label className="w-36 text-gray-700 font-semibold">Company Name</label>
-              
               <div className="flex-grow flex items-center gap-2">
                 <select 
                   name="CompanyName" 
@@ -160,8 +161,6 @@ const AddReservation = ({ onNext, savedData }) => {
                     </option>
                   ))}
                 </select>
-
-                {/* POPUP TRIGGER */}
                 <button 
                   type="button"
                   onClick={() => setIsClientModalOpen(true)} 
@@ -172,7 +171,6 @@ const AddReservation = ({ onNext, savedData }) => {
                 </button>
               </div>
             </div>
-            {/* Contact, From, To fields... */}
             <div className="flex items-center gap-4">
                <label className="w-36 text-gray-700 font-semibold">Contact</label>
                <input type="text" name="Contact" value={formData.Contact} onChange={handleChange} placeholder="07XXXXXXXX" className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
@@ -190,19 +188,18 @@ const AddReservation = ({ onNext, savedData }) => {
 
         <div className="h-1 bg-red-900 rounded-full mb-10"></div>
 
-        {/* ROOM SELECTION SECTION */}
+        {/* ROOM & HALL SELECTION SECTION */}
         <section>
-          {/* ... (Rooms & Halls Table logic from your previous version) ... */}
           <h2 className="text-xl font-bold text-red-900 mb-8 uppercase tracking-wide">Rooms and Halls</h2>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-6">
              <div className="flex items-center gap-4">
                <label className="w-36 text-gray-700 font-semibold">Room / Hall</label>
                <div className="relative flex-grow">
                  <select name='RoomName' value={roomsData.RoomName} onChange={addRoomsInputs} disabled={isLoading || !formData.DateFrom} className="w-full appearance-none border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none pr-10">
-                   <option value="">{isLoading ? "Fetching..." : !formData.DateFrom ? "Set Overall Dates First" : "Select Available Room"}</option>
-                   {availableOptions.map(room => (
-                     <option key={room.name} value={room.name}>
-                         {room.name} (LKR {room.amount?.toLocaleString()})
+                   <option value="">{isLoading ? "Fetching..." : !formData.DateFrom ? "Set Overall Dates First" : "Select Room or Hall"}</option>
+                   {availableOptions.map(option => (
+                     <option key={option.name} value={option.name}>
+                         {option.name} (LKR {option.amount?.toLocaleString()})
                      </option>
                    ))}
                  </select>
@@ -210,20 +207,21 @@ const AddReservation = ({ onNext, savedData }) => {
                </div>
              </div>
              <div className="flex items-center gap-4">
-               <label className="w-44 text-red-900 font-bold uppercase text-sm italic">Est. Room Total</label>
+               <label className="w-44 text-red-900 font-bold uppercase text-sm italic">Est. Total</label>
                <div className="text-2xl font-black text-red-900">
                  LKR {(roomsData.Amount || 0).toLocaleString()}
                </div>
              </div>
              <div className="flex items-center gap-4">
-               <label className="w-36 text-gray-700 font-semibold">Room Date From</label>
+               <label className="w-36 text-gray-700 font-semibold">Date From</label>
                <input type="date" name='DateFrom' value={roomsData.DateFrom} min={formData.DateFrom} max={formData.DateTo} onChange={addRoomsInputs} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
              </div>
              <div className="flex items-center gap-4">
-               <label className="w-36 text-gray-700 font-semibold">Room Date To</label>
+               <label className="w-36 text-gray-700 font-semibold">Date To</label>
                <input type="date" name='DateTo' value={roomsData.DateTo} min={roomsData.DateFrom || formData.DateFrom} max={formData.DateTo} onChange={addRoomsInputs} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
              </div>
            </div>
+           {/* Table and Modal logic remain exactly as you provided */}
            <div className="flex justify-end mb-8">
              <button onClick={addRooms} className="bg-red-900 text-white p-2.5 rounded-full hover:bg-red-800 shadow-md transition-transform hover:scale-110">
                <Plus className="w-6 h-6 stroke-[3px]" />
@@ -256,7 +254,7 @@ const AddReservation = ({ onNext, savedData }) => {
                {formData.Rooms.length > 0 && (
                  <tfoot className="bg-gray-100 border-t-2 border-gray-300">
                    <tr>
-                     <td colSpan="3" className="py-4 px-4 text-right font-bold text-gray-700 uppercase text-sm">Total Room Cost:</td>
+                     <td colSpan="3" className="py-4 px-4 text-right font-bold text-gray-700 uppercase text-sm">Total Cost:</td>
                      <td className="py-4 px-4 font-black text-xl text-red-900">LKR {grandTotal.toLocaleString()}</td>
                      <td></td>
                    </tr>
@@ -266,7 +264,6 @@ const AddReservation = ({ onNext, savedData }) => {
            </div>
         </section>
 
-        {/* SUBMIT BUTTON */}
         <div className="mt-12 flex justify-end">
           <button 
             onClick={() => onNext({ ...formData, TotalRoomAmount: grandTotal })} 
@@ -277,23 +274,18 @@ const AddReservation = ({ onNext, savedData }) => {
         </div>
       </div>
 
-      {/* --- MODAL POPUP --- */}
       {isClientModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
-            
-            {/* CLOSE BUTTON */}
             <button 
               onClick={() => setIsClientModalOpen(false)}
               className="absolute top-6 right-6 p-2 text-gray-400 hover:text-red-900 transition-colors z-10"
             >
               <X size={28} strokeWidth={2.5} />
             </button>
-
-            {/* MODAL FORM */}
             <AddNewClient onSuccess={() => {
-              setIsClientModalOpen(false); // Close popup
-              fetchClients(); // Refresh the list automatically!
+              setIsClientModalOpen(false);
+              fetchClients();
             }} />
           </div>
         </div>
