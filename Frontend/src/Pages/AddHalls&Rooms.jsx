@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "./../Components/AdminNav.jsx";
 
-//DATA TABLE COMPONENT 
+// DATA TABLE COMPONENT
 const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All");
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 4;
 
@@ -15,9 +15,8 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
   const currentRows = data.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(data.length / rowsPerPage);
 
-  // Unified handler to trigger the search in parent component
   const handleFilterChange = (newSearchTerm, newFilterType) => {
-    setCurrentPage(1); 
+    setCurrentPage(1);
     onSearch({ name: newSearchTerm, type: newFilterType });
   };
 
@@ -25,17 +24,16 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
     <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-[#8B0000] uppercase tracking-wider">{title}</h2>
-        <button 
-          onClick={onAdd} 
+        <button
+          onClick={onAdd}
           className="bg-[#8B0000] text-white px-6 py-2 rounded-md font-bold hover:bg-red-800 transition-all shadow-md active:scale-95"
         >
           ADD NEW
         </button>
       </div>
 
-      {/* --- NEW SEARCH BAR SECTION --- */}
+      {/* SEARCH BAR */}
       <div className="mb-6 flex flex-col md:flex-row gap-3 items-center justify-end">
-        {/* Type Filter Dropdown */}
         <select
           value={filterType}
           onChange={(e) => {
@@ -49,7 +47,6 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
           <option value="Non A/C">Non A/C</option>
         </select>
 
-        {/* Search Input with Icon */}
         <div className="relative group w-full md:w-72">
           <input
             type="text"
@@ -90,20 +87,26 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
                   <td className="py-4 px-2 text-gray-600">{item.capacity}</td>
                   <td className="py-4 px-2 text-[#8B0000] font-semibold">{item.type}</td>
                   <td className="py-4 px-2 text-gray-600">{item.extraHour || "-"}</td>
-                  <td className="py-4 px-2 text-center text-blue-500 italic underline cursor-pointer hover:text-blue-700">image</td>
+                  <td className="py-4 px-2 text-center">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md mx-auto" />
+                    ) : (
+                      <span className="text-blue-500 italic underline cursor-pointer">Upload</span>
+                    )}
+                  </td>
                   <td className="py-4 px-2 font-semibold">Rs.{item.amount}</td>
                   <td className="py-4 px-2 text-center">
                     <div className="flex justify-center gap-4 text-xl">
-                      <button 
+                      <button
                         onClick={() => onEdit(item, type)}
-                        className="text-orange-500 hover:scale-125 transition-transform" 
+                        className="text-orange-500 hover:scale-125 transition-transform"
                         title="Edit"
                       >
                         ✏️
                       </button>
-                      <button 
-                        onClick={() => onDelete(type === 'hall' ? 'halls' : 'rooms', item.id)} 
-                        className="text-red-500 hover:scale-125 transition-transform" 
+                      <button
+                        onClick={() => onDelete(type === "hall" ? "halls" : "rooms", item.id)}
+                        className="text-red-500 hover:scale-125 transition-transform"
                         title="Delete"
                       >
                         🗑️
@@ -132,16 +135,14 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          
+
           <div className="flex gap-2 bg-gray-50 p-1.5 rounded-full border border-gray-200">
             {[...Array(totalPages)].map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentPage(i + 1)}
                 className={`w-10 h-10 rounded-full font-bold transition-all duration-300 ${
-                  currentPage === i + 1 
-                  ? "bg-[#8B0000] text-white shadow-lg scale-110" 
-                  : "text-gray-400 hover:text-[#8B0000] hover:bg-white"
+                  currentPage === i + 1 ? "bg-[#8B0000] text-white shadow-lg scale-110" : "text-gray-400 hover:text-[#8B0000] hover:bg-white"
                 }`}
               >
                 {i + 1}
@@ -164,13 +165,13 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
   );
 };
 
-// MODAL COMPONENT (UNCHANGED)
+// MODAL COMPONENT
 const Modal = ({ isOpen, onClose, title, onConfirm, children, onClear, submitText }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" 
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
         onClick={onClose}
       ></div>
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative z-110 
@@ -189,51 +190,56 @@ const Modal = ({ isOpen, onClose, title, onConfirm, children, onClear, submitTex
   );
 };
 
-//MAIN PAGE COMPONENT (UNCHANGED)
+// MAIN COMPONENT
 const AddHallsRooms = () => {
   const [halls, setHalls] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [hallFilter, setHallFilter] = useState({ name: "", type: "All" });
   const [roomFilter, setRoomFilter] = useState({ name: "", type: "All" });
-  
+
   const [isHallModalOpen, setIsHallModalOpen] = useState(false);
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
-  const initialForm = { name: "", capacity: "", type: "Non A/C", amount: "", extraHour: "" };
+
+  const initialForm = { name: "", capacity: "", type: "Non A/C", amount: "", extraHour: "", image: null };
   const [formData, setFormData] = useState(initialForm);
 
-  const sortData = (data) => {
-    return data.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-  };
+  const sortData = (data) => data.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
 
   const fetchData = async () => {
     try {
-      const hRes = await axios.get("http://localhost:5000/api/get-items/halls");
-      const rRes = await axios.get("http://localhost:5000/api/get-items/rooms");
+      const hRes = await axios.get("http://localhost:5000/api/halls-rooms/get-items/halls");
+      const rRes = await axios.get("http://localhost:5000/api/halls-rooms/get-items/rooms");
       setHalls(sortData(hRes.data));
       setRooms(sortData(rRes.data));
-    } catch (err) { console.error("Error fetching data:", err); }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    }
   };
 
   useEffect(() => { fetchData(); }, []);
 
+  // Handle input changes, including file
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, files } = e.target;
+    if (name === "image") {
+      setFormData((prev) => ({ ...prev, image: files[0] || null }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const validateForm = (collectionName) => {
-    const { name, capacity, amount } = formData;
-
-    if (!name.trim() || !capacity || !amount) {
-      alert("Please fill in all required fields (Name, Capacity, and Amount).");
+    const { name, capacity, amount, image } = formData;
+    if (!name.trim() || !capacity || !amount || !image) {
+      alert("Please fill in all required fields (Name, Capacity, Amount, and Image).");
       return false;
     }
 
-    const currentList = collectionName === 'halls' ? halls : rooms;
+    const currentList = collectionName === "halls" ? halls : rooms;
     const isNameExists = currentList.some(
-      item => item.name.toLowerCase() === name.toLowerCase().trim() && item.id !== editId
+      (item) => item.name.toLowerCase() === name.toLowerCase().trim() && item.id !== editId
     );
 
     if (isNameExists) {
@@ -252,36 +258,57 @@ const AddHallsRooms = () => {
       capacity: item.capacity,
       type: item.type,
       amount: item.amount,
-      extraHour: item.extraHour || ""
+      extraHour: item.extraHour || "",
+      image: null,
+      existingImage: item.image
     });
-    if (type === 'hall') setIsHallModalOpen(true);
-    else setIsRoomModalOpen(true);
+    type === "hall" ? setIsHallModalOpen(true) : setIsRoomModalOpen(true);
   };
+
 
   const handleSubmit = async (collectionName) => {
     if (!validateForm(collectionName)) return;
 
     try {
+      const submitData = new FormData();
+      Object.keys(formData).forEach((key) => {
+        if (formData[key] !== null) submitData.append(key, formData[key]);
+      });
+      submitData.append("collectionType", collectionName);
+
+      const config = { headers: { "Content-Type": "multipart/form-data" } };
+
       if (isEditMode) {
-        await axios.put(`http://localhost:5000/api/update-item/${collectionName}/${editId}`, formData);
+        await axios.put(
+          `http://localhost:5000/api/halls-rooms/update-item/${collectionName}/${editId}`,
+          submitData,
+          config
+        );
       } else {
-        await axios.post("http://localhost:5000/api/add-item", { ...formData, collectionType: collectionName });
+        await axios.post(
+          "http://localhost:5000/api/halls-rooms/add-item",
+          submitData,
+          config
+        );
       }
-      
+
       setFormData(initialForm);
       setIsEditMode(false);
       setEditId(null);
-      collectionName === 'halls' ? setIsHallModalOpen(false) : setIsRoomModalOpen(false);
-      fetchData(); 
-      alert(`${collectionName.toUpperCase()} ${isEditMode ? 'updated' : 'added'} successfully!`);
-    } catch (err) { alert(`Error ${isEditMode ? 'updating' : 'adding'} item.`); }
+      collectionName === "halls" ? setIsHallModalOpen(false) : setIsRoomModalOpen(false);
+      fetchData();
+      alert(`${collectionName.toUpperCase()} ${isEditMode ? "updated" : "added"} successfully!`);
+    } catch (err) {
+      console.error(err);
+      alert(`Error ${isEditMode ? "updating" : "adding"} item.`);
+    }
   };
 
   const handleDelete = async (collection, id) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/delete-item/${collection}/${id}`);
-        fetchData(); 
+        await axios.delete(`http://localhost:5000/api/halls-rooms/delete-item/${collection}/${id}`);
+        fetchData();
       } catch (err) { alert("Delete failed."); }
     }
   };
@@ -299,31 +326,32 @@ const AddHallsRooms = () => {
       <NavBar />
       <div className="flex-1 p-4 md:p-8 pt-20 md:pt-8 transition-all duration-300">
         <div className="max-w-6xl mx-auto">
-          <DataTable 
-            title="HALLS" 
-            data={applyFilters(halls, hallFilter)} 
+          <DataTable
+            title="HALLS"
+            data={applyFilters(halls, hallFilter)}
             type="hall"
             onSearch={setHallFilter}
             onDelete={handleDelete}
             onEdit={handleEdit}
-            onAdd={() => { setIsEditMode(false); setEditId(null); setFormData(initialForm); setIsHallModalOpen(true); }} 
+            onAdd={() => { setIsEditMode(false); setEditId(null); setFormData(initialForm); setIsHallModalOpen(true); }}
           />
-          <DataTable 
-            title="ROOMS" 
-            data={applyFilters(rooms, roomFilter)} 
+          <DataTable
+            title="ROOMS"
+            data={applyFilters(rooms, roomFilter)}
             type="room"
             onSearch={setRoomFilter}
             onDelete={handleDelete}
             onEdit={handleEdit}
-            onAdd={() => { setIsEditMode(false); setEditId(null); setFormData(initialForm); setIsRoomModalOpen(true); }} 
+            onAdd={() => { setIsEditMode(false); setEditId(null); setFormData(initialForm); setIsRoomModalOpen(true); }}
           />
         </div>
       </div>
 
-      <Modal 
-        isOpen={isHallModalOpen} onClose={() => setIsHallModalOpen(false)} 
-        title={isEditMode ? "Edit Hall" : "Add A New Hall"} 
-        onConfirm={() => handleSubmit('halls')} 
+      {/* HALL MODAL */}
+      <Modal
+        isOpen={isHallModalOpen} onClose={() => setIsHallModalOpen(false)}
+        title={isEditMode ? "Edit Hall" : "Add A New Hall"}
+        onConfirm={() => handleSubmit("halls")}
         onClear={() => setFormData(initialForm)}
         submitText={isEditMode ? "Update" : "Submit"}
       >
@@ -338,33 +366,38 @@ const AddHallsRooms = () => {
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Type *</label>
           <select name="type" value={formData.type} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none">
-            <option value="Non A/C">Non A/C</option>
             <option value="A/C">A/C</option>
+            <option value="Non A/C">Non A/C</option>
           </select>
         </div>
         <div>
-          <label className="block text-[#8B0000] font-bold mb-1">Extra Hour (Optional)</label>
-          <input name="extraHour" value={formData.extraHour} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
+          <label className="block text-[#8B0000] font-bold mb-1">Extra Hour(Optional)</label>
+          <input name="extraHour" type="text" value={formData.extraHour} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
         </div>
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Amount *</label>
           <input name="amount" type="number" value={formData.amount} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
         </div>
-        <div className="border-2 border-dashed border-gray-200 p-6 rounded-lg text-center text-gray-400 cursor-pointer hover:bg-gray-50 transition-colors">
-          📷 Upload Image
+        <div>
+          <label className="block text-[#8B0000] font-bold mb-1">Upload Image *</label>
+           <input name="image" type="file" accept="image/*" onChange={handleInputChange}
+           className="w-full border p-2 rounded-lg outline-none cursor-pointer"/>
+           {formData.image ? (<p className="text-gray-600 mt-1 text-sm">{formData.image.name}</p>) : formData.existingImage ? (
+            <img src={formData.existingImage} alt="Current" className="w-24 h-24 object-cover rounded-md mt-2"/> ) : null}
         </div>
       </Modal>
 
-      <Modal 
-        isOpen={isRoomModalOpen} onClose={() => setIsRoomModalOpen(false)} 
-        title={isEditMode ? "Edit Room" : "Add A New Room"} 
-        onConfirm={() => handleSubmit('rooms')} 
+      {/* ROOM MODAL */}
+      <Modal
+        isOpen={isRoomModalOpen} onClose={() => setIsRoomModalOpen(false)}
+        title={isEditMode ? "Edit Room" : "Add A New Room"}
+        onConfirm={() => handleSubmit("rooms")}
         onClear={() => setFormData(initialForm)}
         submitText={isEditMode ? "Update" : "Submit"}
       >
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Room Name *</label>
-          <input name="name" value={formData.name} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20" />
+          <input name="name" value={formData.name} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
         </div>
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Capacity *</label>
@@ -373,20 +406,24 @@ const AddHallsRooms = () => {
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Type *</label>
           <select name="type" value={formData.type} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none">
-            <option value="Non A/C">Non A/C</option>
             <option value="A/C">A/C</option>
+            <option value="Non A/C">Non A/C</option>
           </select>
         </div>
         <div>
-          <label className="block text-[#8B0000] font-bold mb-1">Extra Hour (Optional)</label>
-          <input name="extraHour" value={formData.extraHour} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
+          <label className="block text-[#8B0000] font-bold mb-1">Extra Hour(Optional)</label>
+          <input name="extraHour" type="text" value={formData.extraHour} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
         </div>
         <div>
           <label className="block text-[#8B0000] font-bold mb-1">Amount *</label>
           <input name="amount" type="number" value={formData.amount} onChange={handleInputChange} className="w-full border p-2 rounded-lg outline-none" />
         </div>
-        <div className="border-2 border-dashed border-gray-200 p-6 rounded-lg text-center text-gray-400 cursor-pointer hover:bg-gray-50 transition-colors">
-          📷 Upload Image
+        <div>
+          <label className="block text-[#8B0000] font-bold mb-1">Upload Image *</label>
+          <input name="image" type="file" accept="image/*" onChange={handleInputChange}
+           className="w-full border p-2 rounded-lg outline-none cursor-pointer"/>
+           {formData.image ? (<p className="text-gray-600 mt-1 text-sm">{formData.image.name}</p>) : formData.existingImage ? (
+            <img src={formData.existingImage} alt="Current" className="w-24 h-24 object-cover rounded-md mt-2"/> ) : null}
         </div>
       </Modal>
     </div>

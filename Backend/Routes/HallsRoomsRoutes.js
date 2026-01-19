@@ -1,10 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const itemController = require("../Controllers/HallsRoomsController");
+const multer = require("multer");
+const cloudinary = require("../Config/Cloudinary");
+const upload = multer({ storage: multer.memoryStorage() });
+const { addItem, updateItem, deleteItem, getItems } = require("../Controllers/HallsRoomsController");
 
-router.post("/add-item", itemController.addItem);
-router.get("/get-items/:type", itemController.getItems);
-router.delete("/delete-item/:collection/:id", itemController.deleteItem);
-router.put("/update-item/:collection/:id", itemController.updateItem);
+// ADD ITEM
+router.post("/add-item", upload.single("image"), addItem);
+
+// GET ITEMS
+router.get("/get-items/:type", getItems);
+
+// UPDATE ITEM
+router.put("/update-item/:collection/:id", upload.single("image"), updateItem);
+
+// DELETE ITEM
+router.delete("/delete-item/:collection/:id", deleteItem);
 
 module.exports = router;
