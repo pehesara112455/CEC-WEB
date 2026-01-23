@@ -416,13 +416,13 @@ const Blog = () => {
           <div className="bg-white rounded-lg w-full max-w-2xl my-8 overflow-hidden shadow-2xl">
             
             {/* RED HEADER */}
-            <div className="bg-[#7F0404] text-white p-4 flex justify-between items-center">
+            <div className="bg-white text-[#7F0404] p-4 flex justify-between items-center">
               <h3 className="m-0 text-lg font-bold tracking-wide">
                 {editingBlog ? 'EDIT BLOG' : 'ADD NEW BLOG'}
               </h3>
               <button 
                 onClick={handleCloseForm}
-                className="text-white hover:text-gray-200 disabled:opacity-50"
+                className="text-[#7F0404] hover:text-[#7F0404] disabled:opacity-50"
                 disabled={formLoading}
               >
                 <X size={24}/>
@@ -434,6 +434,9 @@ const Blog = () => {
               <form onSubmit={handleSubmit}>
                 {/* Title - Full Width */}
                 <div className="mb-4">
+                   <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
+                    Title {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                  </label>
                   <input 
                     type="text"
                     placeholder="Title *"
@@ -447,6 +450,9 @@ const Blog = () => {
 
                 {/* Sub Title - Full Width */}
                 <div className="mb-4">
+                   <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
+                    Sub Title {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                  </label>
                   <input 
                     type="text"
                     placeholder="Sub Title *"
@@ -460,6 +466,9 @@ const Blog = () => {
 
                 {/* Paragraph 1 - Full Width */}
                 <div className="mb-4">
+                   <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
+                    Paragraph 1 {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                  </label>
                   <textarea
                     placeholder="Paragraph 1 *"
                     rows="4"
@@ -473,6 +482,9 @@ const Blog = () => {
 
                 {/* Paragraph 2 - Full Width */}
                 <div className="mb-4">
+                   <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
+                    Paragraph 2 {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                  </label>
                   <textarea
                     placeholder="Paragraph 2"
                     rows="3"
@@ -485,6 +497,9 @@ const Blog = () => {
 
                 {/* Paragraph 3 - Full Width */}
                 <div className="mb-6">
+                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
+                    Paragraph 3 {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                  </label>
                   <textarea
                     placeholder="Paragraph 3"
                     rows="3"
@@ -497,7 +512,7 @@ const Blog = () => {
 
                 {/* Thumbnail - Full Width */}
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
                     Thumbnail {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
                   </label>
                   <input 
@@ -518,7 +533,7 @@ const Blog = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   {/* Image 1 */}
                   <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
                       Image 1 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
                     </label>
                     <input 
@@ -537,7 +552,7 @@ const Blog = () => {
                   
                   {/* Image 2 */}
                   <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
                       Image 2 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
                     </label>
                     <input 
@@ -556,7 +571,7 @@ const Blog = () => {
                   
                   {/* Image 3 */}
                   <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
                       Image 3 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
                     </label>
                     <input 
@@ -575,7 +590,7 @@ const Blog = () => {
                   
                   {/* Image 4 */}
                   <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
                       Image 4 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
                     </label>
                     <input 
@@ -594,7 +609,7 @@ const Blog = () => {
                   
                   {/* Image 5 */}
                   <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
                       Image 5 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
                     </label>
                     <input 
@@ -613,7 +628,7 @@ const Blog = () => {
                   
                   {/* Status */}
                   <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">Status</label>
+                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">Status</label>
                     <select
                       className="w-full p-2.5 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#7F0404]"
                       value={formData.status}
