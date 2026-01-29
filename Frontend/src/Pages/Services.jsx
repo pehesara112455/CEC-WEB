@@ -1,17 +1,5 @@
+//Frontend/src/Pages/Services.jsx
 import React, { useState, useEffect } from 'react';
-
-// FIREBASE IMPORTS
-import { db } from '../firebase'; 
-import { 
-  collection, 
-  onSnapshot, 
-  addDoc, 
-  deleteDoc, 
-  updateDoc,
-  doc,
-  query, 
-  orderBy 
-} from 'firebase/firestore';
 
 const Services = () => {
   // --- STATE ---
@@ -19,6 +7,8 @@ const Services = () => {
   const [services, setServices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,30 +18,44 @@ const Services = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
+  // Stores File objects for new uploads
   const [formData, setFormData] = useState({
     serviceName: '',
     description: '',
-    image1: '', 
+    image1: null, 
+    image2: null,
+    image3: null
+  });
+
+  // Stores string URLs for existing images (when editing)
+  const [existingImages, setExistingImages] = useState({
+    image1: '',
     image2: '',
     image3: ''
   });
 
-  // --- FIREBASE: READ DATA ---
-  // UPDATED: Now sorts by 'createdAt' descending (Newest first)
-  useEffect(() => {
-    const q = query(collection(db, "services"), orderBy("createdAt", "desc"));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const dataList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setAllData(dataList);
-      setServices(dataList);
-      setLoading(false);
-    });
+  // --- API CONFIGURATION ---
+  // Ensure your backend server is running on this port
+  const API_URL = 'http://localhost:5000/api/services';
 
-    return () => unsubscribe();
+  // --- API: READ DATA ---
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      
+      setAllData(data);
+      setServices(data);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
   }, []);
 
   // --- SEARCH HANDLER ---
@@ -84,10 +88,11 @@ const Services = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  // Updated to store the File object
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     if (files.length > 0) {
-        setFormData({ ...formData, [name]: files[0].name });
+        setFormData({ ...formData, [name]: files[0] });
     }
   };
 
@@ -95,10 +100,11 @@ const Services = () => {
     setFormData({
         serviceName: '',
         description: '',
-        image1: '',
-        image2: '',
-        image3: ''
+        image1: null,
+        image2: null,
+        image3: null
     });
+    setExistingImages({ image1: '', image2: '', image3: '' });
   };
 
   const handleOpenAddModal = () => {
@@ -109,50 +115,83 @@ const Services = () => {
 
   const handleEdit = (item) => {
     setEditingId(item.id);
+    
+    // Populate text fields
     setFormData({
         serviceName: item.serviceName,
         description: item.description,
+        image1: null, // Reset file inputs
+        image2: null,
+        image3: null
+    });
+
+    // Save existing URLs
+    setExistingImages({
         image1: item.image1 || '',
         image2: item.image2 || '',
         image3: item.image3 || ''
     });
+
     setIsModalOpen(true);
   };
 
-  // --- FIREBASE: CREATE & UPDATE ---
+  // --- API: CREATE & UPDATE (Updated for FormData) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true); // <--- Disable button immediately
     
-    // Create the base payload from form data
-    const payload = { ...formData };
+    // Use FormData for file uploads
+    const dataToSend = new FormData();
+    dataToSend.append('serviceName', formData.serviceName);
+    dataToSend.append('description', formData.description);
+
+    // Append new files if selected
+    if (formData.image1) dataToSend.append('image1', formData.image1);
+    if (formData.image2) dataToSend.append('image2', formData.image2);
+    if (formData.image3) dataToSend.append('image3', formData.image3);
+
+    // If Editing, send old URLs for fields that didn't get a new file
+    if (editingId) {
+        if (!formData.image1) dataToSend.append('image1', existingImages.image1);
+        if (!formData.image2) dataToSend.append('image2', existingImages.image2);
+        if (!formData.image3) dataToSend.append('image3', existingImages.image3);
+    }
 
     try {
         if (editingId) {
-            // Update: We do NOT add createdAt here to preserve original date
-            const docRef = doc(db, "services", editingId);
-            await updateDoc(docRef, payload);
+            // Update Service via API
+            await fetch(`${API_URL}/${editingId}`, {
+                method: 'PUT',
+                body: dataToSend // Browser sets Content-Type automatically for FormData
+            });
         } else {
-            // Create: Add the timestamp so we can sort by "Newest First"
-            payload.createdAt = new Date().toISOString(); 
-            await addDoc(collection(db, "services"), payload);
+            // Create Service via API
+            await fetch(API_URL, {
+                method: 'POST',
+                body: dataToSend
+            });
         }
         
         setIsModalOpen(false);
         setEditingId(null);
         handleClear();
-        setCurrentPage(1); // Go to first page to see the new item
+        setCurrentPage(1); 
+        fetchServices(); // Refresh list from backend
 
     } catch (error) {
         console.error("Error saving service: ", error);
         alert("Error saving service");
-    }
+    }finally {
+      setIsSubmitting(false); // <--- Re-enable button when done
+  }
   };
 
-  // --- FIREBASE: DELETE ---
+  // --- API: DELETE ---
   const handleDelete = async (id) => {
     if(window.confirm("Are you sure you want to delete this service?")) {
         try {
-            await deleteDoc(doc(db, "services", id));
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            fetchServices(); // Refresh list from backend
         } catch (error) {
             console.error("Error deleting: ", error);
         }
@@ -222,9 +261,16 @@ const Services = () => {
                             <tr key={item.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors h-15">
                                 <td className="px-2 font-bold text-gray-800 text-sm">{item.serviceName}</td>
                                 <td className="px-2 text-gray-600 text-sm truncate max-w-xs">{item.description}</td>
-                                <td className="px-2 text-gray-400 text-xs italic text-center">{item.image1 || '-'}</td>
-                                <td className="px-2 text-gray-400 text-xs italic text-center">{item.image2 || '-'}</td>
-                                <td className="px-2 text-gray-400 text-xs italic text-center">{item.image3 || '-'}</td>
+                                {/* Updated to show Image or '-' */}
+                                <td className="px-2 text-gray-400 text-xs italic text-center">
+                                    {item.image1 ? <img src={item.image1} alt="1" className="h-8 w-8 object-cover rounded mx-auto border"/> : '-'}
+                                </td>
+                                <td className="px-2 text-gray-400 text-xs italic text-center">
+                                    {item.image2 ? <img src={item.image2} alt="2" className="h-8 w-8 object-cover rounded mx-auto border"/> : '-'}
+                                </td>
+                                <td className="px-2 text-gray-400 text-xs italic text-center">
+                                    {item.image3 ? <img src={item.image3} alt="3" className="h-8 w-8 object-cover rounded mx-auto border"/> : '-'}
+                                </td>
                                 <td className="px-2">
                                     <div className="flex items-center gap-3">
                                         <button 
@@ -334,14 +380,30 @@ const Services = () => {
                                 <label className="block text-[#8B0000] font-bold mb-1">Image {index + 1}</label>
                                 <div className="border border-gray-200 rounded-lg p-2 bg-gray-50">
                                     <input type="file" name={imgField} onChange={handleFileChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#8B0000] file:text-white hover:file:bg-red-800 cursor-pointer"/>
-                                    {formData[imgField] && <p className="mt-1 text-xs text-green-600 font-medium pl-2">Selected: {formData[imgField]}</p>}
+                                    {/* Display New File Name OR Existing Image if editing */}
+                                    {formData[imgField] ? (
+                                        <p className="mt-1 text-xs text-green-600 font-medium pl-2">Selected: {formData[imgField].name}</p>
+                                    ) : (
+                                        editingId && existingImages[imgField] && (
+                                            <p className="mt-1 text-xs text-gray-400 font-medium pl-2">Current: (Image Set)</p>
+                                        )
+                                    )}
                                 </div>
                             </div>
                         ))}
                         <div className="flex gap-4 mt-8 pt-4">
                             <button type="button" onClick={handleClear} className="flex-1 bg-orange-500 text-white font-bold py-2.5 rounded-lg active:scale-95 shadow hover:bg-orange-600 transition-colors">Clear</button>
-                            <button type="submit" className="flex-1 bg-[#8B0000] text-white font-bold py-2.5 rounded-lg active:scale-95 shadow hover:bg-red-800 transition-colors">{editingId ? 'Update' : 'Submit'}</button>
-                        </div>
+                            <button 
+    type="submit" 
+    disabled={isSubmitting} // Disable while uploading
+    className={`flex-1 font-bold py-2.5 rounded-lg shadow transition-colors text-white ${
+        isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#8B0000] hover:bg-red-800 active:scale-95'
+    }`}
+>
+    {/* Change text based on state */}
+    {isSubmitting ? 'Processing...' : (editingId ? 'Update' : 'Submit')}
+</button>
+</div>
                     </form>
                 </div>
             </div>
