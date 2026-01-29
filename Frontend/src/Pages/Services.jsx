@@ -181,9 +181,9 @@ const Services = () => {
     } catch (error) {
         console.error("Error saving service: ", error);
         alert("Error saving service");
-    }finally {
+    } finally {
       setIsSubmitting(false); // <--- Re-enable button when done
-  }
+    }
   };
 
   // --- API: DELETE ---
@@ -261,16 +261,18 @@ const Services = () => {
                             <tr key={item.id} className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors h-15">
                                 <td className="px-2 font-bold text-gray-800 text-sm">{item.serviceName}</td>
                                 <td className="px-2 text-gray-600 text-sm truncate max-w-xs">{item.description}</td>
-                                {/* Updated to show Image or '-' */}
-                                <td className="px-2 text-gray-400 text-xs italic text-center">
-                                    {item.image1 ? <img src={item.image1} alt="1" className="h-8 w-8 object-cover rounded mx-auto border"/> : '-'}
+                                
+                                {/* Updated to show Image BIGGER (h-18 w-18) and CENTERED */}
+                                <td className="px-2 text-gray-400 text-xs italic text-center align-middle">
+                                    {item.image1 ? <img src={item.image1} alt="1" className="h-18 w-18 object-cover rounded mx-auto border"/> : '-'}
                                 </td>
-                                <td className="px-2 text-gray-400 text-xs italic text-center">
-                                    {item.image2 ? <img src={item.image2} alt="2" className="h-8 w-8 object-cover rounded mx-auto border"/> : '-'}
+                                <td className="px-2 text-gray-400 text-xs italic text-center align-middle">
+                                    {item.image2 ? <img src={item.image2} alt="2" className="h-18 w-18 object-cover rounded mx-auto border"/> : '-'}
                                 </td>
-                                <td className="px-2 text-gray-400 text-xs italic text-center">
-                                    {item.image3 ? <img src={item.image3} alt="3" className="h-8 w-8 object-cover rounded mx-auto border"/> : '-'}
+                                <td className="px-2 text-gray-400 text-xs italic text-center align-middle">
+                                    {item.image3 ? <img src={item.image3} alt="3" className="h-18 w-18 object-cover rounded mx-auto border"/> : '-'}
                                 </td>
+
                                 <td className="px-2">
                                     <div className="flex items-center gap-3">
                                         <button 
@@ -394,16 +396,16 @@ const Services = () => {
                         <div className="flex gap-4 mt-8 pt-4">
                             <button type="button" onClick={handleClear} className="flex-1 bg-orange-500 text-white font-bold py-2.5 rounded-lg active:scale-95 shadow hover:bg-orange-600 transition-colors">Clear</button>
                             <button 
-    type="submit" 
-    disabled={isSubmitting} // Disable while uploading
-    className={`flex-1 font-bold py-2.5 rounded-lg shadow transition-colors text-white ${
-        isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#8B0000] hover:bg-red-800 active:scale-95'
-    }`}
->
-    {/* Change text based on state */}
-    {isSubmitting ? 'Processing...' : (editingId ? 'Update' : 'Submit')}
-</button>
-</div>
+                                type="submit" 
+                                disabled={isSubmitting} // Disable while uploading
+                                className={`flex-1 font-bold py-2.5 rounded-lg shadow transition-colors text-white ${
+                                    isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#8B0000] hover:bg-red-800 active:scale-95'
+                                }`}
+                            >
+                                {/* Change text based on state */}
+                                {isSubmitting ? 'Processing...' : (editingId ? 'Update' : 'Submit')}
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
