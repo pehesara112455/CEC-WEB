@@ -1,18 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// FIREBASE IMPORTS
-import { db } from '../firebase'; 
-import { 
-  collection, 
-  onSnapshot, 
-  addDoc, 
-  deleteDoc,
-  updateDoc, 
-  doc,
-  query, 
-  orderBy 
-} from 'firebase/firestore';
-
 const DonationDetails = () => {
   // 1. State
   const [allData, setAllData] = useState([]);
@@ -22,7 +9,7 @@ const DonationDetails = () => {
 
   // --- MODAL & FORM STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null); 
+  const [editingId, setEditingId] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -36,23 +23,29 @@ const DonationDetails = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // FIREBASE: Fetch Data
-  // NOTE: orderBy("date", "desc") ensures the newest dates appear first in the table
-  useEffect(() => {
-    const q = query(collection(db, "donations"), orderBy("date", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const dataList = snapshot.docs.map(doc => ({
-        id: doc.id, 
-        ...doc.data()
-      }));
-      setAllData(dataList);
-      setDonations(dataList);
+  // API URL (Ensure your backend is running on this port)
+  const API_URL = 'http://localhost:5000/api/donations';
+
+  // --- FETCH DATA FROM BACKEND ---
+  const fetchDonations = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      
+      setAllData(data);
+      setDonations(data);
       setLoading(false);
-    });
-    return () => unsubscribe();
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDonations();
   }, []);
 
-  // 2. Search Handler
+  // 2. Search Handler (Client-side search)
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
@@ -105,7 +98,7 @@ const DonationDetails = () => {
     setIsModalOpen(true);
   };
 
-  // --- FIREBASE: SUBMIT ---
+  // --- API: SUBMIT (CREATE / UPDATE) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -120,29 +113,35 @@ const DonationDetails = () => {
         country: formData.country,
         contact: formData.contact,
         date: formData.date,
-        amount: formattedAmount,
-        // Optional: Store creation time to help with sorting if needed later
-        createdAt: new Date().toISOString() 
+        amount: formattedAmount
     };
 
     try {
         if (editingId) {
-            // Update
-            const docRef = doc(db, "donations", editingId);
-            // We remove createdAt from update to preserve original creation time
-            const { createdAt, ...updateData } = payload; 
-            await updateDoc(docRef, updateData);
+            // UPDATE Request
+            await fetch(`${API_URL}/${editingId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
         } else {
-            // Create
-            await addDoc(collection(db, "donations"), payload);
+            // CREATE Request
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
         }
+
+        // Refresh Data locally
+        await fetchDonations();
 
         // Reset and Close
         setIsModalOpen(false);
         setEditingId(null);
         setFormData({ name: '', country: '', contact: '', date: '', amount: '' });
         setSearchTerm(''); 
-        setCurrentPage(1); // Reset to page 1 to see the new entry at top
+        setCurrentPage(1);
 
     } catch (error) {
         console.error("Error saving document: ", error);
@@ -150,11 +149,15 @@ const DonationDetails = () => {
     }
   };
 
-  // FIREBASE: Delete Data
+  // --- API: DELETE ---
   const handleDelete = async (id) => {
     if(window.confirm("Are you sure you want to delete this donation?")) {
         try {
-            await deleteDoc(doc(db, "donations", id));
+            await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+            });
+            // Refresh Data
+            fetchDonations();
         } catch (error) {
             console.error("Error deleting: ", error);
         }
@@ -317,7 +320,7 @@ const DonationDetails = () => {
         )}
       </div>
 
-      {/* --- POPUP MODAL (STYLED EXACTLY LIKE SERVICES) --- */}
+      {/* --- POPUP MODAL --- */}
       {isModalOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             {/* Backdrop with Blur */}
@@ -410,7 +413,7 @@ const DonationDetails = () => {
                             />
                         </div>
 
-                        {/* Buttons (Services Style) */}
+                        {/* Buttons */}
                         <div className="flex gap-4 mt-8 pt-4">
                             <button 
                                 type="button" 
