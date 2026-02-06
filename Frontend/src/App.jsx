@@ -11,11 +11,13 @@ import EditReservation from './Components/Editreservation.jsx';
 import EditReservationStage2 from './Components/Editreservation2.jsx';
 import AddNewClient from './Components/AddNewClient.jsx';
 import ClientDetailsTable from './Components/ClientDetailsTable.jsx';
+import Login from './Pages/Login.jsx';
 
 function App() {
   return (
    <BrowserRouter>
    <Routes>
+      <Route path="/" element ={<Login/>}/>
       <Route path="/admin" element={<AdminNav />} />
       <Route path="/reservation" element={<Reservation />} />
       <Route path="/addReservation" element={<AddReservation />} />

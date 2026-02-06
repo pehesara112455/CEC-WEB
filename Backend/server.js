@@ -1,44 +1,40 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const app = express();
-app.use(cors()); // This allows your React app to talk to Node
-app.use(express.json()); // This allows the server to read the data you send
-const port = 5000;
+const admin = require("firebase-admin");
+const serviceAccount = require("./serviceAccountKey.json");
 
-const admin = require("firebase-admin"); // Call firebase-admin Library.
-const serviceAccount = require("./serviceAccountKey.json"); // Use keys from serviceAccountKey.json
-
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) }); // Check availability 
+// 1. Initialize Firebase Admin
+// This must happen before you use any routes that talk to Firestore
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    });
+    console.log("Firebase Admin has been initialized!");
+}
 
 const db = admin.firestore();
-console.log("Firebase Admin has been initialized!");// Successful massage.
+const app = express();
+const port = 5000;
 
+// 2. Middleware
+app.use(cors()); 
+app.use(express.json()); 
+
+// 3. Import Routes and Auth Middleware
+const authRoutes = require('./Routes/authRoutes');
 const reservationRoutes = require('./Routes/reservationRoutes');
+const verifyToken = require('./middleware/authMiddleware');
 
+// --- 4. PUBLIC ROUTES ---
+// The login route must stay ABOVE the verifyToken middleware
+app.use('/auth', authRoutes); 
 
+// --- 5. PROTECTED ROUTES ---
+// Any route defined below this line will require a Bearer Token in the header
+app.use('/',verifyToken, reservationRoutes);
 
-app.use('/', reservationRoutes);
-
-
-// THIS IS THE MOST IMPORTANT PART
+// 6. Start Server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
-
-{
-  /*async function testDatabase() {
-  try {
-    // This creates a "collection" called 'test' and adds a document
-    await db.collection("test").add({
-      message: "Hello from my Node.js server!",
-      time: new Date()
-    });
-    console.log("Success! Data saved to Firebase.");
-  } catch (error) {
-    console.error("Error connecting to Firebase:", error);
-  }
-}
-
-// Run the test function
-testDatabase();*/
-}
