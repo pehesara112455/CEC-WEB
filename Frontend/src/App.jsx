@@ -1,3 +1,4 @@
+// App.jsx
 import React from 'react';
 import { BrowserRouter,  Routes, Route } from 'react-router-dom'; 
 import AdminNav from './Components/AdminNav.jsx';
@@ -11,6 +12,7 @@ import ClientDetailsTable from './Components/ClientDetailsTable.jsx';
 import Login from './Pages/Login.jsx';
 import AddHallsRooms from './Pages/AddHalls&Rooms.jsx';
 import Blog from "./Pages/Blog.jsx";
+import DonationDetails from './Pages/DonationDetails.jsx';
 
 function App() {
   return (
@@ -27,9 +29,11 @@ function App() {
       <Route path="/clientDetailsTable" element={<ClientDetailsTable />} />
       <Route path="/admin/add-halls-rooms" element={<AddHallsRooms />} />
       <Route path="/blog" element={<Blog />} />
+      <Route path="/admin" element={<DonationDetails />} />
     </Routes>
    </BrowserRouter>
   );
 }
 
 export default App;
+
