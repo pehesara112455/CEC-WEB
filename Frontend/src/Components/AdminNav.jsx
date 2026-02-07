@@ -1,13 +1,19 @@
+// Nav-Bar.jsx
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+
 
 
 const NavBar = ({ isOpen, setIsOpen }) => {
   const menuItems = [
 
+
     { name: 'RESERVATIONS', href: '/reservation' },
     { name: 'CLIENT DETAILS', href: 'clientDetailsTable' },
     { name: 'ROOMS & HALLS', href: '/admin/add-halls-rooms' },
 
-    { name: 'BLOG POSTS', href: '#' },
+    { name: 'BLOG POSTS', path: '/blog' },
+
     { name: 'SERVICES', href: '#' },
     { name: 'DONATIONS', href: '#' },
   ];

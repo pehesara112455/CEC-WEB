@@ -10,6 +10,7 @@ import AddNewClient from './Components/AddNewClient.jsx';
 import ClientDetailsTable from './Components/ClientDetailsTable.jsx';
 import Login from './Pages/Login.jsx';
 import AddHallsRooms from './Pages/AddHalls&Rooms.jsx';
+import Blog from "./Pages/Blog.jsx";
 
 function App() {
   return (
@@ -24,14 +25,11 @@ function App() {
       <Route path="/editReservationStage2" element={<EditReservationStage2 />} />
       <Route path="/addNewClient" element={<AddNewClient />} />
       <Route path="/clientDetailsTable" element={<ClientDetailsTable />} />
-
-
       <Route path="/admin/add-halls-rooms" element={<AddHallsRooms />} />
+      <Route path="/blog" element={<Blog />} />
     </Routes>
    </BrowserRouter>
-    
-     
-    
   );
 }
+
 export default App;
