@@ -1,3 +1,7 @@
-Config/serviceAccountKey.json
-node_modules
+node_modules/
+.vite/
+dist/
 .env
+*.json.local
+serviceAccountKey*.json
+

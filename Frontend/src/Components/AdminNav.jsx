@@ -3,14 +3,17 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 
-const NavBar = () => {
-  const [isOpen, setIsOpen] = useState(true);
 
+const NavBar = ({ isOpen, setIsOpen }) => {
   const menuItems = [
-    { name: 'RESERVATIONS', href: '#' },
-    { name: 'ROOMS & HALLS', href: '#' },
-    { name: 'CLIENT DETAILS', href: '#' },
+
+
+    { name: 'RESERVATIONS', href: '/reservation' },
+    { name: 'CLIENT DETAILS', href: 'clientDetailsTable' },
+    { name: 'ROOMS & HALLS', href: '/admin/add-halls-rooms' },
+
     { name: 'BLOG POSTS', path: '/blog' },
+
     { name: 'SERVICES', href: '#' },
     { name: 'DONATIONS', href: '#' },
   ];
@@ -31,13 +34,14 @@ const NavBar = () => {
       )}
 
       {/* --- SIDEBAR --- */}
+      {/* Changed 'fixed' to 'sticky' so it stays on screen during scroll but pushes content */}
       <aside 
-        className={`${
-          isOpen ? 'w-64 opacity-100' : 'w-0 opacity-0 p-0 overflow-hidden'
-        } bg-[#8B0000] text-white flex flex-col font-sans shadow-xl h-screen transition-all duration-300 ease-in-out whitespace-nowrap`}
+        className={`sticky top-0 h-screen z-40 bg-[#8B0000] text-white flex flex-col font-sans shadow-xl transition-all duration-300 ease-in-out overflow-hidden ${
+          isOpen ? 'w-64 opacity-100' : 'w-0 opacity-0'
+        }`}
       >
         {/* Header Section */}
-        <div className="p-6 flex items-center gap-3">
+        <div className="p-6 flex items-center gap-3 whitespace-nowrap">
           <button 
             onClick={() => setIsOpen(false)}
             className="focus:outline-none hover:bg-red-800 p-1 rounded transition-colors"
@@ -57,15 +61,9 @@ const NavBar = () => {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-8 py-4">
-          {/* CHANGED: 
-             1. Removed 'space-y-8' 
-             2. Added 'divide-y' (creates the borders)
-             3. Added 'divide-white/30' (makes lines white but semi-transparent for a cleaner look)
-          */}
+        <nav className="flex-1 px-8 py-4 whitespace-nowrap">
           <ul className="divide-y divide-white/30">
             {menuItems.map((item, index) => (
-              // Added 'py-4' to add breathing room above and below the text relative to the lines
               <li key={index} className="py-4">
                 <a 
                   href={item.href} 
@@ -79,8 +77,9 @@ const NavBar = () => {
         </nav>
 
         {/* Logout Section */}
-        <div className="p-6 flex justify-center pb-10">
-<button className="bg-white text-[#8B0000] font-bold py-2 px-10 rounded shadow hover:bg-[#EFB506] hover:text-[#8B0000] transition-colors duration-200">            LOG OUT
+        <div className="p-6 flex justify-center pb-10 whitespace-nowrap">
+          <button className="bg-white text-[#8B0000] font-bold py-2 px-10 rounded shadow hover:bg-[#EFB506] hover:text-[#8B0000] transition-colors duration-200"> 
+            LOG OUT
           </button>
         </div>
       </aside>
