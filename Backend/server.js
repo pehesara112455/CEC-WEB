@@ -25,9 +25,11 @@ app.use(express.json());
 const authRoutes = require('./Routes/authRoutes');
 const reservationRoutes = require('./Routes/reservationRoutes');
 const verifyToken = require('./middleware/authMiddleware');
+const hallsRoomsRoutes = require("./Routes/HallsRoomsRoutes");
 
 // --- 4. PUBLIC ROUTES ---
 // The login route must stay ABOVE the verifyToken middleware
+app.use("/api/halls-rooms", hallsRoomsRoutes);
 app.use('/auth', authRoutes); 
 
 // --- 5. PROTECTED ROUTES ---
@@ -38,3 +40,7 @@ app.use('/',verifyToken, reservationRoutes);
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
+
+
+

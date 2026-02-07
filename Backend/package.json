@@ -4,7 +4,9 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
-    "firebase-admin": "^13.6.0"
+    "firebase-admin": "^13.6.0",
+    "cloudinary": "^2.9.0",
+     "multer": "^2.0.2"
   },
   "name": "backend",
   "version": "1.0.0",
@@ -16,5 +18,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
 }

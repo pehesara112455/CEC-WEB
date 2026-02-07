@@ -1,8 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { Routes, Route } from 'react-router-dom'; // <--- Import Routes and Route
-
-import { BrowserRouter } from 'react-router-dom'; // <--- Import the BrowserRouter
+import { BrowserRouter,  Routes, Route } from 'react-router-dom'; 
 import AdminNav from './Components/AdminNav.jsx';
 import Reservation from "./Pages/Admin-Reservation.jsx";
 import AddReservation from './Components/addNewReservation.jsx';
@@ -12,6 +9,7 @@ import EditReservationStage2 from './Components/Editreservation2.jsx';
 import AddNewClient from './Components/AddNewClient.jsx';
 import ClientDetailsTable from './Components/ClientDetailsTable.jsx';
 import Login from './Pages/Login.jsx';
+import AddHallsRooms from './Pages/AddHalls&Rooms.jsx';
 
 function App() {
   return (
@@ -28,6 +26,7 @@ function App() {
       <Route path="/clientDetailsTable" element={<ClientDetailsTable />} />
 
 
+      <Route path="/admin/add-halls-rooms" element={<AddHallsRooms />} />
     </Routes>
    </BrowserRouter>
     

@@ -1,10 +1,12 @@
-import React from 'react';
+
 
 const NavBar = ({ isOpen, setIsOpen }) => {
   const menuItems = [
+
     { name: 'RESERVATIONS', href: '/reservation' },
-    { name: 'ROOMS & HALLS', href: '#' },
     { name: 'CLIENT DETAILS', href: 'clientDetailsTable' },
+    { name: 'ROOMS & HALLS', href: '/admin/add-halls-rooms' },
+
     { name: 'BLOG POSTS', href: '#' },
     { name: 'SERVICES', href: '#' },
     { name: 'DONATIONS', href: '#' },
