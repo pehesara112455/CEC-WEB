@@ -1,6 +1,6 @@
 // backend/Config/cloudinary.js
-import { v2 as cloudinary } from 'cloudinary';
-import dotenv from 'dotenv';
+const cloudinary = require('cloudinary').v2;
+const dotenv = require('dotenv');
 
 // Ensure config is loaded (safe to call multiple times)
 dotenv.config();
@@ -21,4 +21,4 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export default cloudinary;
+module.exports = cloudinary;

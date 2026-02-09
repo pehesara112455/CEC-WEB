@@ -1,12 +1,17 @@
-// Backend/server.js
 import dotenv from 'dotenv';
-dotenv.config(); // <--- THIS MUST BE THE FIRST LINE OF CODE
+
+
 import express from 'express';
+
 import cors from 'cors';
 
-// IMPORTANT: Check if your folder is named "Routes" or "routes"
-// It must match exactly. Based on your previous files, use:
-import serviceRoutes from './Routes/serviceRoutes.js'; 
+// Load environment variables immediately
+dotenv.config(); 
+
+// Import your routes
+// Note: In CommonJS (require), you usually don't need the .js extension
+import serviceRoutes from './Routes/serviceRoutes.js';
+
 
 const app = express();
 const PORT = 5000;

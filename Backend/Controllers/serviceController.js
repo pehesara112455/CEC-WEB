@@ -1,19 +1,9 @@
-// backend/controllers/serviceController.js
-import { db } from '../Config/firebase.js';
-import cloudinary from '../Config/Cloudinary.js'; // Import the config we made
-import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  deleteDoc, 
-  updateDoc, 
-  doc, 
-  query, 
-  orderBy 
-} from 'firebase/firestore';
+// Backend/Controllers/serviceController.js
+const db = require('../Config/firebase'); // Importing the Admin SDK instance
+const cloudinary = require('../Config/Cloudinary');
 
 // --- HELPER: Upload file to Cloudinary ---
-const uploadToCloudinary = async (fileBuffer) => {
+const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       { resource_type: 'auto', folder: 'services' },
@@ -27,45 +17,38 @@ const uploadToCloudinary = async (fileBuffer) => {
 };
 
 // GET ALL SERVICES
-export const getServices = async (req, res) => {
+exports.getServices = async (req, res) => {
   try {
-    const q = query(collection(db, "services"), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
+    // Admin SDK syntax: db.collection().orderBy().get()
+    const snapshot = await db.collection("services").orderBy("createdAt", "desc").get();
+    
     const services = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
     res.status(200).json(services);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// CREATE SERVICE (OPTIMIZED)
-export const createService = async (req, res) => {
+// CREATE SERVICE
+exports.createService = async (req, res) => {
   try {
     const { serviceName, description } = req.body;
     
-    // 1. Prepare Upload Promises (Do not await yet)
     const uploadPromises = [];
     let imageUrls = { image1: '', image2: '', image3: '' };
 
     if (req.files) {
-        if (req.files.image1) {
-            uploadPromises.push(uploadToCloudinary(req.files.image1[0].buffer).then(url => imageUrls.image1 = url));
-        }
-        if (req.files.image2) {
-            uploadPromises.push(uploadToCloudinary(req.files.image2[0].buffer).then(url => imageUrls.image2 = url));
-        }
-        if (req.files.image3) {
-            uploadPromises.push(uploadToCloudinary(req.files.image3[0].buffer).then(url => imageUrls.image3 = url));
-        }
+        if (req.files.image1) uploadPromises.push(uploadToCloudinary(req.files.image1[0].buffer).then(url => imageUrls.image1 = url));
+        if (req.files.image2) uploadPromises.push(uploadToCloudinary(req.files.image2[0].buffer).then(url => imageUrls.image2 = url));
+        if (req.files.image3) uploadPromises.push(uploadToCloudinary(req.files.image3[0].buffer).then(url => imageUrls.image3 = url));
     }
 
-    // 2. Run all uploads in PARALLEL (This is the speed boost)
     await Promise.all(uploadPromises);
 
-    // 3. Save to Database
     const newService = {
       serviceName,
       description,
@@ -73,7 +56,9 @@ export const createService = async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    const docRef = await addDoc(collection(db, "services"), newService);
+    // Admin SDK syntax: db.collection().add()
+    const docRef = await db.collection("services").add(newService);
+    
     res.status(201).json({ id: docRef.id, ...newService });
   } catch (error) {
     console.error("Error creating service:", error);
@@ -81,13 +66,12 @@ export const createService = async (req, res) => {
   }
 };
 
-// UPDATE SERVICE (OPTIMIZED)
-export const updateService = async (req, res) => {
+// UPDATE SERVICE
+exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
     const { serviceName, description } = req.body;
     
-    // Start with existing URLs or empty strings
     let updatedData = { 
         serviceName, 
         description,
@@ -96,27 +80,18 @@ export const updateService = async (req, res) => {
         image3: req.body.image3 || '' 
     };
 
-    // 1. Prepare Upload Promises for NEW files only
     const uploadPromises = [];
-
     if (req.files) {
-        if (req.files.image1) {
-            uploadPromises.push(uploadToCloudinary(req.files.image1[0].buffer).then(url => updatedData.image1 = url));
-        }
-        if (req.files.image2) {
-            uploadPromises.push(uploadToCloudinary(req.files.image2[0].buffer).then(url => updatedData.image2 = url));
-        }
-        if (req.files.image3) {
-            uploadPromises.push(uploadToCloudinary(req.files.image3[0].buffer).then(url => updatedData.image3 = url));
-        }
+        if (req.files.image1) uploadPromises.push(uploadToCloudinary(req.files.image1[0].buffer).then(url => updatedData.image1 = url));
+        if (req.files.image2) uploadPromises.push(uploadToCloudinary(req.files.image2[0].buffer).then(url => updatedData.image2 = url));
+        if (req.files.image3) uploadPromises.push(uploadToCloudinary(req.files.image3[0].buffer).then(url => updatedData.image3 = url));
     }
 
-    // 2. Run uploads in PARALLEL
     await Promise.all(uploadPromises);
 
-    // 3. Update Database
-    const docRef = doc(db, "services", id);
-    await updateDoc(docRef, updatedData);
+    // Admin SDK syntax: db.collection().doc().update()
+    await db.collection("services").doc(id).update(updatedData);
+    
     res.status(200).json({ id, ...updatedData });
   } catch (error) {
     console.error("Error updating service:", error);
@@ -125,10 +100,12 @@ export const updateService = async (req, res) => {
 };
 
 // DELETE SERVICE
-export const deleteService = async (req, res) => {
+exports.deleteService = async (req, res) => {
   try {
     const { id } = req.params;
-    await deleteDoc(doc(db, "services", id));
+    // Admin SDK syntax: db.collection().doc().delete()
+    await db.collection("services").doc(id).delete();
+    
     res.status(200).json({ message: "Service deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
