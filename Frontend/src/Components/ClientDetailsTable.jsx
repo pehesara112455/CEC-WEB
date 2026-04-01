@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Pencil, Trash2, Search, Plus } from 'lucide-react';
+// FIX 1: Import your secure Axios instance instead of standard axios
+import axiosInstance from '../api/axiosInstance'; 
 import NavBar from './AdminNav'; 
 import AddNewClient from './AddNewClient'; // Using this for both Add and Edit
 
@@ -22,7 +23,8 @@ const ClientDetailsTable = () => {
 
   const fetchClients = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/get-all-clients');
+      // FIX 2: Use axiosInstance and the protected /api/clients route
+      const response = await axiosInstance.get('/api/clients/get-all-clients');
       setClients(response.data);
     } catch (error) {
       console.error("Error loading clients:", error);
@@ -34,10 +36,11 @@ const ClientDetailsTable = () => {
   const handleDelete = async (clientId) => {
     if (window.confirm(`Are you sure you want to delete client ${clientId}?`)) {
       try {
-        await axios.delete(`http://localhost:5000/delete-client/${clientId}`);
+        // FIX 3: Use axiosInstance and the protected /api/clients route
+        await axiosInstance.delete(`/api/clients/delete-client/${clientId}`);
         setClients(prev => prev.filter(c => c.clientId !== clientId));
       } catch (error) {
-        alert("Delete failed.");
+        alert("$ Delete failed.");
       }
     }
   };

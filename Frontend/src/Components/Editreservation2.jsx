@@ -1,26 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, ChevronDown } from 'lucide-react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance'; 
 
 const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
-  // 1. MASTER STATE: Stores the lists of meals and services
   const [allData, setAllData] = useState({
     Meals: [],
     Others: [],
   });
 
-  // 2. FETCH EFFECT: Loads existing data from sub-collections when page opens
+  // FETCH EXISTING SUB-COLLECTIONS
   useEffect(() => {
     const fetchSubCollections = async () => {
       if (savedData?.displayId) {
         try {
-          // Fetch existing Meals
-          const mealsRes = await axios.get(`http://localhost:5000/get-reservation-meals/${savedData.displayId}`);
-          // Fetch existing Others
-          const othersRes = await axios.get(`http://localhost:5000/get-reservation-others/${savedData.displayId}`);
+          const mealsRes = await axiosInstance.get(`/reservations/get-reservation-meals/${savedData.displayId}`);
+          const othersRes = await axiosInstance.get(`/reservations/get-reservation-others/${savedData.displayId}`);
           
           setAllData({
-            // Ensure every meal row has a calculated Total (Qty * Price)
             Meals: (mealsRes.data || []).map(m => ({
                 ...m,
                 Total: Number(m.Quantity || 0) * Number(m.Amount || 0)
@@ -35,21 +31,13 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
     fetchSubCollections();
   }, [savedData?.displayId]);
 
-  // Input states for the forms
   const [mealData, setMealData] = useState({ MealName: '', Quantity: 1, Description: '', Amount: '' });
   const [otherData, setOtherData] = useState({ ItemName: '', Amount: '', Description: '' });
 
-  // --- CALCULATIONS ---
-  // Rooms cost comes from Stage 1
+  // --- DYNAMIC CALCULATIONS ---
   const totalRoomsCost = savedData?.Rooms?.reduce((sum, room) => sum + Number(room.Amount || 0), 0) || 0;
-  
-  // Meals Total sums up the pre-calculated row totals
   const totalMealsCost = allData.Meals.reduce((sum, item) => sum + (Number(item.Total) || 0), 0);
-  
-  // Others Total sums up service costs
   const totalOthersCost = allData.Others.reduce((sum, item) => sum + (Number(item.Amount) || 0), 0);
-  
-  // Final Grand Total for everything
   const grandTotal = totalRoomsCost + totalMealsCost + totalOthersCost;
 
   // HANDLERS
@@ -71,7 +59,7 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
     }
   };
 
-  // ADD FUNCTIONS
+  // ADD / REMOVE FUNCTIONS
   const addMeal = () => {
     if (!mealData.MealName || !mealData.Amount) return alert("Select meal and unit price");
     const rowTotal = Number(mealData.Quantity) * Number(mealData.Amount);
@@ -79,7 +67,7 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
         ...allData, 
         Meals: [...allData.Meals, { ...mealData, Total: rowTotal }] 
     });
-    setMealData({ MealName: '', Quantity: 1, Description: '', Amount: '' }); // Clear inputs
+    setMealData({ MealName: '', Quantity: 1, Description: '', Amount: '' });
   };
 
   const addOthers = () => {
@@ -88,10 +76,9 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
         ...allData, 
         Others: [...allData.Others, { ...otherData }] 
     });
-    setOtherData({ ItemName: '', Amount: '', Description: '' }); // Clear inputs
+    setOtherData({ ItemName: '', Amount: '', Description: '' });
   };
 
-  // DELETE FUNCTIONS: Removes item from the local array
   const removeMeal = (index) => {
     setAllData({ ...allData, Meals: allData.Meals.filter((_, i) => i !== index) });
   };
@@ -102,14 +89,14 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
 
   // FINAL SUBMISSION
   const handelConfirm = () => {
-  const finalReservationData = {
-    ...savedData,
-    Meals: allData.Meals,   // The updated list with removals/additions
-    Others: allData.Others, // The updated list with removals/additions
-    TotalAmount: grandTotal 
+    const finalReservationData = {
+      ...savedData,
+      Meals: allData.Meals,   
+      Others: allData.Others, 
+      TotalAmount: grandTotal 
+    };
+    onNext(finalReservationData);
   };
-  onNext(finalReservationData);
-};
 
   return (
     <div className='flex w-full min-h-screen bg-gray-50 p-4'>
@@ -128,10 +115,10 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
 
         {/* SECTION 1: MEALS */}
         <section className="mb-12">
-          <div className="flex justify-between items-end mb-6">
-            <h3 className="text-lg font-bold text-gray-700 uppercase tracking-wide border-b-4 border-red-900 pb-1">Meal Selection</h3>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-xl font-bold text-red-900 uppercase tracking-wide underline decoration-red-200">Meals Selection</h2>
             <div className="text-right">
-              <p className="text-xs text-gray-400 uppercase font-bold tracking-widest">Meals Total</p>
+              <p className="text-xs text-gray-500 uppercase font-bold">Meal Total</p>
               <p className="text-2xl font-black text-red-900">LKR {totalMealsCost.toLocaleString()}</p>
             </div>
           </div>
@@ -139,13 +126,16 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-gray-50 p-6 rounded-2xl border-2 border-dashed border-gray-200">
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold uppercase text-gray-500 ml-1">Meal Type</label>
-              <select name='MealName' value={mealData.MealName} onChange={mealHandel} className="w-full border-2 border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:border-red-900 bg-white transition-all">
-                <option value="">-- Choose Meal --</option>
-                <option value="Breakfast">Breakfast</option>
-                <option value="Lunch">Lunch</option>
-                <option value="Dinner">Dinner</option>
-                <option value="Refreshments">Refreshments</option>
-              </select>
+              <div className="relative">
+                <select name='MealName' value={mealData.MealName} onChange={mealHandel} className="w-full border-2 border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:border-red-900 bg-white appearance-none transition-all">
+                  <option value="">-- Choose Meal --</option>
+                  <option value="Breakfast">Breakfast</option>
+                  <option value="Lunch">Lunch</option>
+                  <option value="Dinner">Dinner</option>
+                  <option value="Refreshments">Refreshments</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold uppercase text-gray-500 ml-1">Quantity</label>
@@ -171,7 +161,7 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
               <thead className="bg-gray-100 text-[10px] font-black uppercase text-gray-600 tracking-widest border-b">
                 <tr>
                     <th className="py-4 px-6">Meal Name</th>
-                    <th className="py-4 px-6">Calculation (Qty x Rate)</th>
+                    <th className="py-4 px-6 text-center">Calculation (Qty x Rate)</th>
                     <th className="py-4 px-6 text-red-900">Total Price</th>
                     <th className="py-4 px-6"></th>
                 </tr>
@@ -180,7 +170,7 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
                 {allData.Meals.map((meal, index) => (
                   <tr key={index} className="hover:bg-gray-50 transition-colors group">
                     <td className="py-4 px-6 font-bold text-gray-700">{meal.MealName}</td>
-                    <td className="py-4 px-6 text-gray-500 font-medium">{meal.Quantity} x LKR {Number(meal.Amount).toLocaleString()}</td>
+                    <td className="py-4 px-6 text-gray-500 font-medium text-center">{meal.Quantity} x LKR {Number(meal.Amount).toLocaleString()}</td>
                     <td className="py-4 px-6 font-black text-red-900">LKR {meal.Total?.toLocaleString()}</td>
                     <td className="py-4 px-6 text-right">
                         <X onClick={() => removeMeal(index)} className="cursor-pointer text-gray-300 hover:text-red-600 transition-colors w-5 h-5 ml-auto" />
@@ -188,16 +178,26 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
                   </tr>
                 ))}
               </tbody>
+              {/* Dynamic Footer for Meals */}
+              {allData.Meals.length > 0 && (
+                <tfoot className="bg-gray-100 border-t-2 border-gray-300">
+                  <tr>
+                    <td colSpan="2" className="py-4 px-6 text-right font-bold text-gray-700 uppercase text-sm">Total Meals Cost:</td>
+                    <td className="py-4 px-6 font-black text-xl text-red-900">LKR {totalMealsCost.toLocaleString()}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </section>
 
         {/* SECTION 2: ADDITIONAL SERVICES (Others) */}
         <section className="mb-12">
-          <div className="flex justify-between items-end mb-6">
-            <h3 className="text-lg font-bold text-gray-700 uppercase tracking-wide border-b-4 border-red-900 pb-1">Extra Services</h3>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-xl font-bold text-red-900 uppercase tracking-wide underline decoration-red-200">Additional Services</h2>
             <div className="text-right">
-              <p className="text-xs text-gray-400 uppercase font-bold tracking-widest">Services Total</p>
+              <p className="text-xs text-gray-500 uppercase font-bold">Others Total</p>
               <p className="text-2xl font-black text-red-900">LKR {totalOthersCost.toLocaleString()}</p>
             </div>
           </div>
@@ -229,7 +229,7 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {allData.Others.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50 transition-colors">
+                  <tr key={index} className="bg-white border-b border-gray-100">
                     <td className="py-4 px-6 font-bold text-gray-700">{item.ItemName}</td>
                     <td className="py-4 px-6 text-gray-500 italic font-medium">{item.Description || '--'}</td>
                     <td className="py-4 px-6 font-black text-red-900">LKR {Number(item.Amount).toLocaleString()}</td>
@@ -237,36 +237,46 @@ const EditReservationStage2 = ({ onBack, onNext, savedData }) => {
                   </tr>
                 ))}
               </tbody>
+              {/* Dynamic Footer for Others */}
+              {allData.Others.length > 0 && (
+                <tfoot className="bg-gray-100 border-t-2 border-gray-300">
+                  <tr>
+                    <td colSpan="2" className="py-4 px-6 text-right font-bold text-gray-700 uppercase text-sm">Total Services Cost:</td>
+                    <td className="py-4 px-6 font-black text-xl text-red-900">LKR {totalOthersCost.toLocaleString()}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </section>
 
-        {/* FINAL TOTAL SUMMARY */}
-        <div className="bg-red-50 p-10 rounded-3xl border-2 border-red-100 shadow-inner">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-red-50">
-                    <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Rooms & Halls</p>
+        {/* FINAL TOTAL SUMMARY BOX */}
+        <div className="bg-red-50 p-8 rounded-2xl border-2 border-red-100 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-red-50">
+                    <p className="text-xs text-red-700 uppercase font-bold">Rooms & Halls</p>
                     <p className="text-xl font-bold text-gray-800">LKR {totalRoomsCost.toLocaleString()}</p>
                 </div>
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-red-50">
-                    <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Meals Total</p>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-red-50">
+                    <p className="text-xs text-red-700 uppercase font-bold">Meals</p>
                     <p className="text-xl font-bold text-gray-800">LKR {totalMealsCost.toLocaleString()}</p>
                 </div>
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-red-50">
-                    <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Other Services</p>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-red-50">
+                    <p className="text-xs text-red-700 uppercase font-bold">Additional Services</p>
                     <p className="text-xl font-bold text-gray-800">LKR {totalOthersCost.toLocaleString()}</p>
                 </div>
             </div>
 
-            <div className="h-px bg-red-200 mb-8 opacity-50"></div>
+            <div className="h-px bg-red-200 mb-6"></div>
 
-            <div className="flex flex-col md:flex-row justify-between items-center px-2 gap-4">
+            <div className="flex justify-between items-center px-2">
                 <div>
-                    <h3 className="text-red-900 font-black uppercase text-2xl tracking-tighter">Updated Grand Total</h3>
-                    <p className="text-xs text-red-700 font-bold opacity-75 uppercase tracking-wide">Final calculated amount for this reservation</p>
+                    <h3 className="text-red-900 font-black uppercase text-xl">Updated Grand Total</h3>
+                    <p className="text-sm text-red-700 font-medium">Final amount for the entire reservation</p>
                 </div>
                 <div className="text-right">
-                    <span className="text-6xl font-black text-red-900 underline decoration-double decoration-red-300">
+                    <span className="text-5xl font-black text-red-900 underline decoration-double decoration-red-300">
                         LKR {grandTotal.toLocaleString()}
                     </span>
                 </div>

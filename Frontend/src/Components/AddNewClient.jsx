@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+// IMPORT CHANGED: Use your custom axios instance to automatically attach the login token
+import axiosInstance from '../api/axiosInstance'; 
 
-// Added 'onSuccess' prop to allow the parent component (AddReservation)
-// to close this popup and refresh the client list automatically.
 const AddNewClient = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     companyName: '',
@@ -41,7 +40,8 @@ const AddNewClient = ({ onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/add-client', formData);
+      // URL CHANGED: Pointing to the correct, protected backend route using the instance
+      const response = await axiosInstance.post('/api/clients/add-client', formData);
       
       // If successful:
       alert(`Success! Client ID: ${response.data.id}`);
@@ -60,10 +60,8 @@ const AddNewClient = ({ onSuccess }) => {
   };
 
   return (
-    // 'min-h-screen' and 'bg-gray-100' are removed or made conditional 
-    // so the form looks good inside a popup.
     <div className="flex justify-center items-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl p-10 font-sans">
+      <div className="bg-white rounded-2xl w-full max-w-4xl p-10 font-sans shadow-lg">
         
         {/* TITLE */}
         <h1 className="text-3xl font-black text-red-900 text-center uppercase tracking-wider mb-12">

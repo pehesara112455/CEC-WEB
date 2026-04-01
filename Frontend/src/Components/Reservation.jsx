@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import API from '../api/axiosInstance'; // Use your custom instance instead of 'axios'
+import API from '../api/axiosInstance'; // Using your custom instance for the VIP Token
 import { Search, Plus, Pencil, Trash2, ChevronDown } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -16,8 +16,8 @@ const ReservationTable = ({ openAddRes, onEdit }) => {
 
   const fetchReservations = async () => {
     try {
-      // Changed to use API instance and updated path to match server.js naming
-      const response = await API.get('/get-all-reservations');
+      // FIX 1: Added '/reservations' prefix to match backend routing
+      const response = await API.get('/reservations/get-all-reservations');
       setReservations(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -28,8 +28,8 @@ const ReservationTable = ({ openAddRes, onEdit }) => {
 
   const generatePDF = async (displayId) => {
     try {
-      // API instance handles the token automatically
-      const response = await API.get(`/get-invoice-data/${displayId}`);
+      // FIX 2: Added '/reservations' prefix 
+      const response = await API.get(`/reservations/get-invoice-data/${displayId}`);
       const data = response.data;
       
       const doc = new jsPDF();
@@ -69,21 +69,24 @@ const ReservationTable = ({ openAddRes, onEdit }) => {
   };
 
   const handleFieldUpdate = async (displayId, field, value) => {
+    // Optimistic UI update
     setReservations(prev => 
       prev.map(item => item.displayId === displayId ? { ...item, [field]: value } : item)
     );
     try {
-      await API.patch(`/update-reservation/${displayId}`, { [field]: value });
+      // FIX 3: Added '/reservations' prefix 
+      await API.patch(`/reservations/update-reservation/${displayId}`, { [field]: value });
     } catch (error) {
       alert("Failed to sync.");
-      fetchReservations();
+      fetchReservations(); // Revert back to server data if it fails
     }
   };
 
   const deleteRow = async (id) => {
     if (window.confirm(`Delete ${id}?`)) {
       try {
-        await API.delete(`/delete-reservation/${id}`);
+        // FIX 4: Added '/reservations' prefix 
+        await API.delete(`/reservations/delete-reservation/${id}`);
         setReservations(prev => prev.filter(item => item.displayId !== id));
       } catch (error) {
         alert("Delete failed.");
@@ -91,7 +94,6 @@ const ReservationTable = ({ openAddRes, onEdit }) => {
     }
   };
 
-  // ... (Filtering and Return JSX remain the same)
   const filteredData = reservations.filter(item => {
     const matchesSearch = 
       (item.CompanyName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) || 

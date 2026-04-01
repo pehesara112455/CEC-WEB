@@ -36,6 +36,8 @@ const reservationRoutes = require('./Routes/reservationRoutes');
 const hallsRoomsRoutes = require("./Routes/HallsRoomsRoutes");
 const blogRoutes = require('./Routes/blogRoutes');
 const verifyToken = require('./middleware/authMiddleware');
+const donationRoutes = require('./Routes/DonationRoutes');
+const clientRoutes = require('./Routes/clientRoutes');
 
 // 4. Public Routes
 app.get('/api/health', (req, res) => {
@@ -45,6 +47,8 @@ app.get('/api/health', (req, res) => {
 app.use('/auth', authRoutes);
 app.use("/api/halls-rooms", hallsRoomsRoutes);
 app.use("/api/blogs", blogRoutes);
+app.use("/api/donations", donationRoutes);
+app.use('/api/clients',clientRoutes);
 
 // 5. Protected Routes (Admin Only)
 app.use('/reservations', verifyToken, reservationRoutes);

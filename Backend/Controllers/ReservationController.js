@@ -5,67 +5,80 @@ const db = admin.firestore();
 /**
  * Processes a new reservation with a custom formatted ID (e.g., RES-2026-001).
  */
+/**
+ * Processes a new reservation with a custom formatted ID (e.g., RES-2026-001).
+ */
 exports.testAdd = async (req, res) => {
   try {
-    // 1. Get data from frontend. Use TotalAmount (or GrandTotal) correctly.
     const { CompanyName, Contact, DateFrom, DateTo, Rooms, Meals, Others, TotalAmount } = req.body;
 
-    // --- CUSTOM ID GENERATION ---
-    const currentYear = new Date().getFullYear();
+    // 1. ADD THIS LINE BACK: Define the reference so Node.js knows where to save data
     const reservationsRef = db.collection('reservations');
-    
-    // Count existing documents to generate the next sequence number
-    const snapshot = await reservationsRef.count().get();
-    const count = snapshot.data().count;
-    
-    // Format the number (e.g., 1 becomes 001)
-    const sequenceNumber = String(count + 1).padStart(3, '0');
-    const customResId = `RES-${currentYear}-${sequenceNumber}`;
+
+    // --- SECURE CUSTOM ID GENERATION ---
+    const currentYear = new Date().getFullYear();
+    const counterRef = db.collection('system').doc('reservationCounter');
+
+    // Run a transaction to ensure no two reservations get the same ID at the exact same time
+    const customResId = await db.runTransaction(async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      
+      let nextIdNumber = 1;
+      
+      if (counterDoc.exists) {
+        nextIdNumber = counterDoc.data().lastId + 1;
+      }
+
+      // Update the counter in the database
+      transaction.set(counterRef, { lastId: nextIdNumber }, { merge: true });
+
+      // Format the string: RES-2026-001
+      const sequenceNumber = String(nextIdNumber).padStart(3, '0');
+      return `RES-${currentYear}-${sequenceNumber}`;
+    });
 
     // 2. CREATE MODEL INSTANCE
-    // We match your Model: (CompanyName, Contact, DateFrom, DateTo, displayId, TotalAmount)
     const myRes = new reservation(
       CompanyName, 
       Contact, 
       DateFrom, 
       DateTo, 
       customResId, 
-      Number(TotalAmount || 0) // Ensure this is a number for math
+      Number(TotalAmount || 0)
     );
     
     // 3. SAVE MAIN DOCUMENT
-    // We use .set(myRes.toFirestore()) so all 6 fields are saved correctly.
     await reservationsRef.doc(customResId).set(myRes.toFirestore());
 
     const resId = customResId; 
 
-    // 1. ADD ROOMS TO SUB-COLLECTION
+    // 4. ADD ROOMS TO SUB-COLLECTION
     if (Rooms && Array.isArray(Rooms) && Rooms.length > 0) {
-    const roomSubRef = db.collection("reservations").doc(resId).collection("Rooms");
-    const globalBookingRef = db.collection('bookings');
-    
-    const roomPromises = Rooms.map(async (room) => {
-        // Save to sub-collection (Inside the reservation document)
-        const subCollectionPromise = roomSubRef.add(reservation.roomsSubCollection(room));
-        
-        // Save to global collection (For availability checking)
-        // We pass 'resId' here so we know which reservation this room belongs to
-        const globalCollectionPromise = globalBookingRef.add(
-            reservation.globalBookingMapping(room, resId) 
-        );
-        
-        return Promise.all([subCollectionPromise, globalCollectionPromise]);
-    });
-    await Promise.all(roomPromises);
-}
-    // 2. ADD MEALS TO SUB-COLLECTION
+      const roomSubRef = db.collection("reservations").doc(resId).collection("Rooms");
+      const globalBookingRef = db.collection('bookings');
+      
+      const roomPromises = Rooms.map(async (room) => {
+          // Save to sub-collection (Inside the reservation document)
+          const subCollectionPromise = roomSubRef.add(reservation.roomsSubCollection(room));
+          
+          // Save to global collection (For availability checking)
+          const globalCollectionPromise = globalBookingRef.add(
+              reservation.globalBookingMapping(room, resId) 
+          );
+          
+          return Promise.all([subCollectionPromise, globalCollectionPromise]);
+      });
+      await Promise.all(roomPromises);
+    }
+
+    // 5. ADD MEALS TO SUB-COLLECTION
     if (Meals && Array.isArray(Meals) && Meals.length > 0) {
       const mealRef = db.collection("reservations").doc(resId).collection("Meals");
       const mealPromises = Meals.map(meal => mealRef.add(reservation.mealsSubCollection(meal)));
       await Promise.all(mealPromises);
     }
 
-    // 3. ADD OTHERS TO SUB-COLLECTION
+    // 6. ADD OTHERS TO SUB-COLLECTION
     if (Others && Array.isArray(Others) && Others.length > 0) {
       const otherRef = db.collection("reservations").doc(resId).collection("Others");
       const otherPromises = Others.map(other => otherRef.add(reservation.othersSubCollection(other)));

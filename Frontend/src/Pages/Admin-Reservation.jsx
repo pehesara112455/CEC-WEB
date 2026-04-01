@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios'; 
+// IMPORT CHANGED: Swapped standard axios for your secure axiosInstance
+import axiosInstance from '../api/axiosInstance'; 
 import NavBar from '../Components/AdminNav'; 
 import ReservationTable from '../Components/Reservation';
 import AddReservation from '../Components/addNewReservation';
@@ -38,10 +39,12 @@ const ReservationsDashboard = () => {
   const handelDataStage2 = async (stage2Data) => {
     const finalBookingData = { ...allData, ...stage2Data };
     try {
-      await axios.post('http://localhost:5000/add-reservation', finalBookingData);
+      // URL CHANGED: Added /reservations prefix and used axiosInstance
+      await axiosInstance.post('/reservations/add-reservation', finalBookingData);
       alert("Reservation Saved Successfully!");
       resetAndReturn();
     } catch (error) {
+      console.error("Save Error:", error);
       alert("Failed to save. Check your server.");
     }
   };
@@ -60,10 +63,12 @@ const ReservationsDashboard = () => {
   const handleFinalUpdate = async (updatedStage2Data) => {
     const finalUpdatedData = { ...editingData, ...updatedStage2Data };
     try {
-      await axios.patch(`http://localhost:5000/update-reservation/${finalUpdatedData.displayId}`, finalUpdatedData);
+      // URL CHANGED: Added /reservations prefix and used axiosInstance
+      await axiosInstance.patch(`/reservations/update-reservation/${finalUpdatedData.displayId}`, finalUpdatedData);
       alert("Reservation Updated Successfully!");
       resetAndReturn();
     } catch (error) {
+      console.error("Update Error:", error);
       alert("Error updating reservation.");
     }
   };

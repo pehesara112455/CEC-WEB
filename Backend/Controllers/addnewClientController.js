@@ -1,7 +1,7 @@
 // 1. Make sure these imports are at the TOP of your file
 const ClientDetails = require('../Models/clientDetails'); 
 const admin = require('firebase-admin');
-const db = admin.firestore();
+const db = require("../Config/firebase")
 
 exports.addClient = async (req, res) => {
   try {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, ChevronDown, PlusCircle } from 'lucide-react';
-import axios from 'axios';
+// IMPORT CHANGED: We removed the standard 'axios' import because axiosInstance handles everything securely
+import axiosInstance from '../api/axiosInstance'; 
 import AddNewClient from './AddNewClient'; 
 
 const AddReservation = ({ onNext, savedData }) => {
@@ -26,29 +27,28 @@ const AddReservation = ({ onNext, savedData }) => {
     Amount: 0
   });
 
+  // FIXED: Changed to a GET request to match the backend router
   const fetchClients = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/get-all-clients');
+      const response = await axiosInstance.get('/api/clients/get-all-clients');
       setClients(response.data);
     } catch (error) {
       console.error("Error fetching clients:", error);
     }
   };
 
-  // --- UPDATED FETCH LOGIC ---
+  // FIXED: Changed to use axiosInstance and the protected /reservations route
   useEffect(() => {
     const fetchAllAccommodations = async () => {
       try {
-        // Fetch both Rooms and Halls simultaneously
         const [roomsRes, hallsRes] = await Promise.all([
-          axios.get('http://localhost:5000/get-all-rooms'),
-          axios.get('http://localhost:5000/get-all-halls')
+          axiosInstance.get('/reservations/get-all-rooms'),
+          axiosInstance.get('/reservations/get-all-halls')
         ]);
 
         const rooms = Array.isArray(roomsRes.data) ? roomsRes.data : [];
         const halls = Array.isArray(hallsRes.data) ? hallsRes.data : [];
 
-        // Combine them into one array for the dropdown
         setDbRooms([...rooms, ...halls]);
       } catch (error) {
         console.error("Failed to load accommodations:", error.message);
@@ -61,12 +61,12 @@ const AddReservation = ({ onNext, savedData }) => {
     fetchClients();
   }, []);
 
-  // ... (Availability effect and Math logic remain the same)
+  // FIXED: Changed to use axiosInstance and the protected /reservations route
   useEffect(() => {
     const checkAvailability = async () => {
       if (formData.DateFrom && formData.DateTo) {
         try {
-          const response = await axios.get('http://localhost:5000/check-availability', {
+          const response = await axiosInstance.get('/reservations/check-availability', {
             params: { startDate: formData.DateFrom, endDate: formData.DateTo }
           });
           setOccupiedRooms(response.data); 
@@ -95,7 +95,7 @@ const AddReservation = ({ onNext, savedData }) => {
       const updated = { ...prev, [name]: value };
       if (name === 'RoomName') {
         const roomInfo = dbRooms.find(r => r.name === value);
-        // Matching 'amount' field from your Firestore Halls screenshot
+        // Matching 'amount' field from your Firestore Halls database
         updated.PricePerDay = roomInfo ? roomInfo.amount : 0;
       }
       updated.Amount = calculateTotal(
@@ -156,7 +156,7 @@ const AddReservation = ({ onNext, savedData }) => {
                 >
                   <option value="">Select a Company</option>
                   {clients.map((client) => (
-                    <option key={client.clientId} value={client.companyName}>
+                    <option key={client.id || client.clientId} value={client.companyName}>
                       {client.companyName}
                     </option>
                   ))}
@@ -221,7 +221,7 @@ const AddReservation = ({ onNext, savedData }) => {
                <input type="date" name='DateTo' value={roomsData.DateTo} min={roomsData.DateFrom || formData.DateFrom} max={formData.DateTo} onChange={addRoomsInputs} className="flex-grow border-2 border-gray-400 rounded-lg px-3 py-2 focus:border-red-900 outline-none" />
              </div>
            </div>
-           {/* Table and Modal logic remain exactly as you provided */}
+           
            <div className="flex justify-end mb-8">
              <button onClick={addRooms} className="bg-red-900 text-white p-2.5 rounded-full hover:bg-red-800 shadow-md transition-transform hover:scale-110">
                <Plus className="w-6 h-6 stroke-[3px]" />
@@ -274,6 +274,7 @@ const AddReservation = ({ onNext, savedData }) => {
         </div>
       </div>
 
+      {/* POPUP MODAL FOR ADDING CLIENT */}
       {isClientModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
@@ -285,7 +286,7 @@ const AddReservation = ({ onNext, savedData }) => {
             </button>
             <AddNewClient onSuccess={() => {
               setIsClientModalOpen(false);
-              fetchClients();
+              fetchClients(); // Refresh the dropdown when the popup closes
             }} />
           </div>
         </div>

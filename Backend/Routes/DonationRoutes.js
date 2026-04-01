@@ -1,10 +1,10 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
     getAllDonations, 
     createDonation, 
     updateDonation, 
     deleteDonation 
-} from '../Controllers/DonationController.js'; // Note the .js extension!
+} = require('../Controllers/DonationController.js');
 
 const router = express.Router();
 
@@ -13,4 +13,5 @@ router.post('/', createDonation);
 router.put('/:id', updateDonation);
 router.delete('/:id', deleteDonation);
 
-export default router;
+// Export the router using CommonJS so server.js can read it correctly
+module.exports = router;
