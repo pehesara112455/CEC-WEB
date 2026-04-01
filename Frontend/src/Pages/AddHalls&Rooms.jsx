@@ -109,7 +109,7 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
         </table>
       </div>
 
-      {/* UPDATED PAGINATION UI (Matches provided image style) */}
+      {/* CUSTOM PAGINATION UI */}
       {totalPages > 1 && (
         <div className="mt-8 flex flex-col items-center justify-center gap-3 border-t border-gray-100 pt-6">
           <span className="text-sm font-bold text-gray-400 tracking-wide">
@@ -164,9 +164,9 @@ const DataTable = ({ title, data, onAdd, type, onSearch, onDelete, onEdit }) => 
 const Modal = ({ isOpen, onClose, title, onConfirm, children, onClear, submitText }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose}></div>
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative z-110 animate-in zoom-in-95 slide-in-from-bottom-8 fade-in duration-500 ease-out">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative z-[110] animate-in zoom-in-95 slide-in-from-bottom-8 fade-in duration-500 ease-out">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-red-600 text-3xl">&times;</button>
         <div className="p-8">
           <h3 className="text-2xl font-bold text-[#8B0000] text-center mb-6 uppercase tracking-tight">{title}</h3>
@@ -192,6 +192,9 @@ const AddHallsRooms = () => {
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
+  
+  // SIDEBAR STATE FOR NAVBAR
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const initialForm = { name: "", capacity: "", type: "Non A/C", amount: "", extraHour: "", image: null };
   const [formData, setFormData] = useState(initialForm);
@@ -341,9 +344,14 @@ const AddHallsRooms = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#FDF2F2]">
-      <NavBar />
-      <div className="flex-1 p-4 md:p-8 pt-20 md:pt-8 transition-all duration-300">
+    // FIX: Main container set to h-screen and overflow-hidden for correct sidebar interaction
+    <div className="flex bg-[#FDF2F2] h-screen overflow-hidden">
+      
+      {/* FIX: Passed sidebar state to NavBar */}
+      <NavBar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+      
+      {/* FIX: Main content area now scrolls independently */}
+      <div className="flex-1 h-full overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 transition-all duration-300 min-w-0">
         <div className="max-w-6xl mx-auto">
           <DataTable
             title="HALLS"

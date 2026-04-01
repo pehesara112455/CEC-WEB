@@ -2,12 +2,7 @@ const reservation = require('../Models/reservationModel');
 const admin = require("firebase-admin");
 const db = admin.firestore();
 
-/**
- * Processes a new reservation with a custom formatted ID (e.g., RES-2026-001).
- */
-/**
- * Processes a new reservation with a custom formatted ID (e.g., RES-2026-001).
- */
+
 exports.testAdd = async (req, res) => {
   try {
     const { CompanyName, Contact, DateFrom, DateTo, Rooms, Meals, Others, TotalAmount } = req.body;
