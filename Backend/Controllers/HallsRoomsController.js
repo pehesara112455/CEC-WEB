@@ -1,4 +1,4 @@
-const db = require("../Config/Firebase");
+const db = require("../Config/firebase"); // Changed to lowercase 'firebase' to match your file system
 const cloudinary = require("../Config/Cloudinary");
 
 // ADD ITEM
@@ -6,21 +6,20 @@ exports.addItem = async (req, res) => {
   try {
     const { collectionType, name, capacity, type, amount, extraHour } = req.body;
   
-    // Validation
     if (!name || !capacity || !type || !amount || !req.file) {
       return res.status(400).json({ error: "All fields except 'Extra Hour' are required." });
     }
   
     let imageUrl = null;
 
-    // Upload image if file exists
+    // Stream the incoming memory buffer directly to Cloudinary
     if (req.file) {
       imageUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: collectionType },
           (error, result) => {
             if (error) reject(error);
-            else resolve(result.secure_url);
+            else resolve(result.secure_url); // Returns the secure HTTPS link
           }
         );
         stream.end(req.file.buffer);
@@ -33,7 +32,7 @@ exports.addItem = async (req, res) => {
       type,
       amount: Number(amount),
       extraHour: extraHour || null,
-      image: imageUrl,
+      image: imageUrl, // Save ONLY the link to Firestore
       createdAt: new Date().toISOString(),
     });
 
@@ -50,7 +49,6 @@ exports.updateItem = async (req, res) => {
     const { collection, id } = req.params;
     const { name, capacity, type, amount, extraHour } = req.body;
 
-    // Validation
     if (!name || !capacity || !type || !amount) {
       return res.status(400).json({ error: "All fields except 'Extra Hour' are required." });
     }
@@ -65,7 +63,7 @@ exports.updateItem = async (req, res) => {
     };
 
     if (req.file) {
-      // Upload new image if provided
+      // If the user selected a NEW image, upload it and overwrite the old link
       const imageUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: collection },
@@ -79,11 +77,8 @@ exports.updateItem = async (req, res) => {
       updatedData.image = imageUrl;
     }
 
-    // If no existing image and no new image, reject
-    const docSnapshot = await db.collection(collection).doc(id).get();
-    if (!updatedData.image && !docSnapshot.data().image) {
-      return res.status(400).json({ error: "Image is required." });
-    }
+    // If they didn't upload a new file, updatedData.image remains undefined.
+    // Firestore's .update() function safely ignores undefined fields, keeping the old image!
 
     await db.collection(collection).doc(id).update(updatedData);
 
