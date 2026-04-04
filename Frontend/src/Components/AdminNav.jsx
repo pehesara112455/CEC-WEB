@@ -12,10 +12,10 @@ const NavBar = ({ isOpen, setIsOpen }) => {
     { name: 'CLIENT DETAILS', href: 'clientDetailsTable' },
     { name: 'ROOMS & HALLS', href: '/admin/add-halls-rooms' },
 
-    { name: 'BLOG POSTS', path: '/blog' },
+    { name: 'BLOG POSTS', href: '/blog' },
 
     { name: 'SERVICES', href: '#' },
-    { name: 'DONATIONS', href: '#' },
+    { name: 'DONATIONS', href: '/DonationDetails' },
   ];
 
   return (

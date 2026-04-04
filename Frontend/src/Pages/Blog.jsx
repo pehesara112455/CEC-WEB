@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Edit2, Trash2, X, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
+import NavBar from "./../Components/AdminNav.jsx"; // IMPORT NAVBAR
 
 const Blog = () => {
-  // API base URL
-  const API_BASE_URL = "http://localhost:5000/api/blogs";
+  const API_BASE_URL = "/api/blogs";
   
   // State Management
   const [blogs, setBlogs] = useState([]);
@@ -16,51 +16,39 @@ const Blog = () => {
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   
+  // Sidebar State for NavBar
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 4; // Shows 4 blogs per page
+  
   // Form State
   const [formData, setFormData] = useState({
-    title: '',
-    subTitle: '',
-    paragraph1: '',
-    paragraph2: '',
-    paragraph3: '',
-    status: 'draft'
+    title: '', subTitle: '', paragraph1: '', paragraph2: '', paragraph3: '', status: 'draft'
   });
   
   // Files State
   const [files, setFiles] = useState({
-    thumbnail: null,
-    image1: null,
-    image2: null,
-    image3: null,
-    image4: null,
-    image5: null
+    thumbnail: null, image1: null, image2: null, image3: null, image4: null, image5: null
   });
 
-  // File preview state (optional - for showing selected file names)
   const [filePreviews, setFilePreviews] = useState({
-    thumbnail: null,
-    image1: null,
-    image2: null,
-    image3: null,
-    image4: null,
-    image5: null
+    thumbnail: null, image1: null, image2: null, image3: null, image4: null, image5: null
   });
 
-  // Fetch blogs from backend on component mount
   useEffect(() => {
     fetchBlogs();
   }, []);
 
-  // Filter blogs based on search and status
+  // Filter Logic & Pagination Reset
   useEffect(() => {
     let result = blogs;
     
-    // Apply status filter
     if (statusFilter !== 'all') {
       result = result.filter(blog => blog.status === statusFilter);
     }
     
-    // Apply search filter
     if (searchTerm) {
       result = result.filter(blog => 
         blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,13 +58,19 @@ const Blog = () => {
     }
     
     setFilteredBlogs(result);
+    setCurrentPage(1); // Jump back to page 1 whenever filters change
   }, [blogs, statusFilter, searchTerm]);
 
-  // Fetch blogs from backend API
+  // Pagination Calculations
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentRows = filteredBlogs.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(filteredBlogs.length / rowsPerPage);
+
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_BASE_URL);
+      const response = await axiosInstance.get(API_BASE_URL);
       
       if (response.data.success) {
         setBlogs(response.data.blogs);
@@ -91,7 +85,6 @@ const Blog = () => {
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
@@ -99,7 +92,6 @@ const Blog = () => {
     try {
       const formDataToSend = new FormData();
       
-      // Add text fields
       formDataToSend.append('title', formData.title);
       formDataToSend.append('subTitle', formData.subTitle);
       formDataToSend.append('paragraph1', formData.paragraph1);
@@ -107,57 +99,36 @@ const Blog = () => {
       formDataToSend.append('paragraph3', formData.paragraph3);
       formDataToSend.append('status', formData.status);
       
-      // Add thumbnail if exists
-      if (files.thumbnail) {
-        formDataToSend.append('thumbnail', files.thumbnail);
-      }
+      if (files.thumbnail) formDataToSend.append('thumbnail', files.thumbnail);
       
-      // Add images (only if they exist)
-      const imageFields = ['image1', 'image2', 'image3', 'image4', 'image5'];
-      imageFields.forEach(field => {
-        if (files[field]) {
-          formDataToSend.append('images', files[field]);
-        }
+      ['image1', 'image2', 'image3', 'image4', 'image5'].forEach(field => {
+        if (files[field]) formDataToSend.append('images', files[field]);
       });
       
       let response;
+      const config = { headers: { 'Content-Type': 'multipart/form-data' } };
       
       if (editingBlog) {
-        // Update existing blog
-        response = await axios.put(`${API_BASE_URL}/${editingBlog.id}`, formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        response = await axiosInstance.put(`${API_BASE_URL}/${editingBlog.id}`, formDataToSend, config);
       } else {
-        // Create new blog
-        response = await axios.post(API_BASE_URL, formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        response = await axiosInstance.post(API_BASE_URL, formDataToSend, config);
       }
       
       if (response.data.success) {
         alert(editingBlog ? "✅ Blog updated successfully!" : "✅ Blog created successfully!");
-        fetchBlogs(); // Refresh blog list
+        fetchBlogs(); 
         handleCloseForm();
       } else {
         alert(response.data.error || "Operation failed!");
       }
     } catch (error) {
       console.error("Error saving blog:", error);
-      if (error.response) {
-        alert(`Error: ${error.response.data.error || error.response.data.message}`);
-      } else {
-        alert("Network error. Please check your connection.");
-      }
+      alert("Network error or operation failed. Check your connection.");
     } finally {
       setFormLoading(false);
     }
   };
 
-  // Edit blog - populate form with existing data
   const handleEdit = (blog) => {
     setEditingBlog(blog);
     setFormData({
@@ -169,37 +140,18 @@ const Blog = () => {
       status: blog.status || 'draft'
     });
     
-    // Reset files when editing (user needs to re-upload if they want to change)
-    setFiles({
-      thumbnail: null,
-      image1: null,
-      image2: null,
-      image3: null,
-      image4: null,
-      image5: null
-    });
-    
-    setFilePreviews({
-      thumbnail: null,
-      image1: null,
-      image2: null,
-      image3: null,
-      image4: null,
-      image5: null
-    });
-    
+    setFiles({ thumbnail: null, image1: null, image2: null, image3: null, image4: null, image5: null });
+    setFilePreviews({ thumbnail: null, image1: null, image2: null, image3: null, image4: null, image5: null });
     setShowForm(true);
   };
 
-  // Delete blog
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
       try {
-        const response = await axios.delete(`${API_BASE_URL}/${id}`);
-        
+        const response = await axiosInstance.delete(`${API_BASE_URL}/${id}`);
         if (response.data.success) {
           alert("✅ Blog deleted successfully!");
-          fetchBlogs(); // Refresh blog list
+          fetchBlogs(); 
         } else {
           alert("Failed to delete blog!");
         }
@@ -210,237 +162,232 @@ const Blog = () => {
     }
   };
 
-  // Handle file input change
   const handleFileChange = (field, e) => {
     const file = e.target.files[0];
     if (file) {
-      setFiles(prev => ({
-        ...prev,
-        [field]: file
-      }));
-      
-      // Set file preview name
-      setFilePreviews(prev => ({
-        ...prev,
-        [field]: file.name
-      }));
+      setFiles(prev => ({ ...prev, [field]: file }));
+      setFilePreviews(prev => ({ ...prev, [field]: file.name }));
     }
   };
 
-  // Close form and reset
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingBlog(null);
-    setFormData({
-      title: '',
-      subTitle: '',
-      paragraph1: '',
-      paragraph2: '',
-      paragraph3: '',
-      status: 'draft'
-    });
-    setFiles({
-      thumbnail: null,
-      image1: null,
-      image2: null,
-      image3: null,
-      image4: null,
-      image5: null
-    });
-    setFilePreviews({
-      thumbnail: null,
-      image1: null,
-      image2: null,
-      image3: null,
-      image4: null,
-      image5: null
-    });
+    handleClearForm();
   };
 
-  // Handle form input change
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Clear form
   const handleClearForm = () => {
-    setFormData({
-      title: '',
-      subTitle: '',
-      paragraph1: '',
-      paragraph2: '',
-      paragraph3: '',
-      status: 'draft'
-    });
-    setFiles({
-      thumbnail: null,
-      image1: null,
-      image2: null,
-      image3: null,
-      image4: null,
-      image5: null
-    });
-    setFilePreviews({
-      thumbnail: null,
-      image1: null,
-      image2: null,
-      image3: null,
-      image4: null,
-      image5: null
-    });
+    setFormData({ title: '', subTitle: '', paragraph1: '', paragraph2: '', paragraph3: '', status: 'draft' });
+    setFiles({ thumbnail: null, image1: null, image2: null, image3: null, image4: null, image5: null });
+    setFilePreviews({ thumbnail: null, image1: null, image2: null, image3: null, image4: null, image5: null });
   };
 
   return (
-    <div className="p-16 font-sans bg-[#FDF2F2] min-h-screen">
+    // FIX: Main container set to h-screen and overflow-hidden for correct sidebar interaction
+    <div className="flex bg-[#FDF2F2] h-screen overflow-hidden font-sans">
       
-      {/* Header Container */}
-      <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-        {/* Title with underline */}
-        <h2 className="text-xl font-bold text-gray-800 mb-6">
-          BLOG POSTS
-        </h2>
-        
-        {/* Controls Row - Status, Search, Add New */}
-        <div className="flex items-center gap-4">
-          {/* Status Dropdown */}
-          <select 
-            className="px-4 py-2 border-2 border-[#7F0404] rounded-md text-sm bg-white focus:outline-none focus:border-pink-400 min-w-[120px]"
-            value={statusFilter} 
-            onChange={(e) => setStatusFilter(e.target.value)}
-            disabled={loading}
-          >
-            <option value="all">All</option>
-            <option value="draft">Draft</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="completed">Completed</option>
-          </select>
+      {/* FIX: Passed sidebar state to NavBar */}
+      <NavBar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+      
+      {/* FIX: Main content area now scrolls independently */}
+      <div className="flex-1 h-full overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 transition-all duration-300 min-w-0">
+        <div className="max-w-6xl mx-auto">
+          
+          {/* Header Container */}
+          <div className="bg-white p-6 rounded-xl shadow-sm mb-6 border border-gray-100">
+            <h2 className="text-xl font-bold text-[#7F0404] mb-6 uppercase tracking-wider">BLOG POSTS</h2>
+            
+            {/* Controls Row */}
+            <div className="flex flex-col md:flex-row items-center gap-4 justify-end">
+              <select 
+                className="w-full md:w-48 px-4 py-2.5 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#7F0404] focus:border-[#7F0404] transition-all font-medium text-gray-600"
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter(e.target.value)}
+                disabled={loading}
+              >
+                <option value="all">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="completed">Completed</option>
+              </select>
 
-          {/* Search Bar */}
-          <input 
-            className="flex-1 px-4 py-2 border-2 border-[#7F0404] rounded-md text-sm focus:outline-none focus:border-pink-400"
-            type="text" 
-            placeholder="Search by title, subtitle or ID..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            disabled={loading}
-          />
+              <div className="relative group w-full md:w-72">
+                <input 
+                  className="w-full pl-5 pr-10 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#7F0404] focus:border-[#7F0404] transition-all font-medium text-gray-600"
+                  type="text" 
+                  placeholder="Search by title, subtitle or ID..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
 
-          {/* Add New Button */}
-          <button 
-            onClick={() => setShowForm(true)}
-            disabled={loading}
-            className="bg-[#7F0404] hover:bg-[#6a0303] text-white px-6 py-2 rounded-md font-semibold transition-colors whitespace-nowrap disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Loading...' : 'ADD NEW'}
-          </button>
-        </div>
-      </div>
+              <button 
+                onClick={() => setShowForm(true)}
+                disabled={loading}
+                className="bg-[#7F0404] hover:bg-[#6a0303] text-white px-6 py-2.5 rounded-md font-bold transition-all shadow-md active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {loading ? 'Loading...' : 'ADD NEW'}
+              </button>
+            </div>
+          </div>
 
-      {/* Table Container */}
-      <div className="bg-white rounded-lg overflow-hidden shadow-sm">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-white border-b-2 border-[#7F0404]">
-              <th className="px-6 py-4 text-left font-bold text-[#7F0404] text-base">ID</th>
-              <th className="px-6 py-4 text-left font-bold text-[#7F0404] text-base">Title</th>
-              <th className="px-6 py-4 text-left font-bold text-[#7F0404] text-base">Sub Title</th>
-              <th className="px-6 py-4 text-left font-bold text-[#7F0404] text-base">Status</th>
-              <th className="px-6 py-4 text-left font-bold text-[#7F0404] text-base">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="5" className="px-6 py-12 text-center">
-                  <div className="flex justify-center items-center gap-2">
-                    <Loader2 className="animate-spin" size={20} />
-                    <span>Loading blogs...</span>
-                  </div>
-                </td>
-              </tr>
-            ) : filteredBlogs.length > 0 ? (
-              filteredBlogs.map(blog => (
-                <tr key={blog.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-600 font-mono text-sm">
-                    #{blog.id.substring(0, 8)}...
-                  </td>
-                  <td className="px-6 py-4 font-medium text-gray-800">{blog.title}</td>
-                  <td className="px-6 py-4 text-gray-600">{blog.subTitle}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                      blog.status === 'completed' ? 'bg-blue-100 text-blue-700' : 
-                      blog.status === 'upcoming' ? 'bg-green-100 text-green-700' : 
-                      'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {blog.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button 
-                      onClick={() => handleEdit(blog)} 
-                      className="px-3 py-1.5 mr-2 text-black rounded text-xs transition-colors inline-flex items-center gap-1 hover:bg-gray-100"
-                      title="Edit"
+          {/* Table Container */}
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">
+            <div className="overflow-x-auto min-h-[380px]">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-[#7F0404] text-[#7F0404] font-bold">
+                    <th className="py-3 px-2">ID</th>
+                    <th className="py-3 px-2">Title</th>
+                    <th className="py-3 px-2">Sub Title</th>
+                    <th className="py-3 px-2">Status</th>
+                    <th className="py-3 px-2 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="5" className="py-20 text-center">
+                        <div className="flex justify-center items-center gap-2 text-gray-500">
+                          <Loader2 className="animate-spin" size={24} />
+                          <span className="font-medium">Loading blogs...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : currentRows.length > 0 ? (
+                    currentRows.map(blog => (
+                      <tr key={blog.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="py-4 px-2 text-gray-500 font-mono text-sm">
+                          #{blog.id.substring(0, 8)}...
+                        </td>
+                        <td className="py-4 px-2 font-bold text-gray-800">{blog.title}</td>
+                        <td className="py-4 px-2 text-gray-600 font-medium">{blog.subTitle}</td>
+                        <td className="py-4 px-2">
+                          <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
+                            blog.status === 'completed' ? 'bg-blue-100 text-blue-700' : 
+                            blog.status === 'upcoming' ? 'bg-green-100 text-green-700' : 
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {blog.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-2 text-center">
+                          <div className="flex justify-center gap-3">
+                            <button 
+                              onClick={() => handleEdit(blog)} 
+                              className="text-orange-500 hover:scale-125 transition-transform"
+                              title="Edit"
+                            >
+                              <Edit2 size={20}/> 
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(blog.id)} 
+                              className="text-red-500 hover:scale-125 transition-transform"
+                              title="Delete"
+                            >
+                              <Trash2 size={20}/> 
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="py-20 text-center text-gray-400 font-medium italic">
+                        {searchTerm || statusFilter !== 'all' ? 
+                          "No blogs found with the current filters." : 
+                          "No blogs found. Click 'ADD NEW' to create your first blog."
+                        }
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* CUSTOM PAGINATION UI */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 border-t border-gray-100 pt-6">
+                <span className="text-sm font-bold text-gray-400 tracking-wide">
+                  Page {currentPage} of {totalPages}
+                </span>
+                
+                <div className="flex gap-2">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => prev - 1)}
+                    className="w-10 h-10 flex items-center justify-center rounded-md bg-[#1A1A1A] text-white hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`w-10 h-10 rounded-md font-bold text-sm transition-all duration-200 shadow-sm ${
+                        currentPage === i + 1 
+                          ? "bg-[#7F0404] text-white" 
+                          : "bg-[#8E8E8E] text-white hover:bg-gray-500"
+                      }`}
                     >
-                      <Edit2 size={20}/> 
+                      {i + 1}
                     </button>
-                    <button 
-                      onClick={() => handleDelete(blog.id)} 
-                      className="px-3 py-1.5 text-black rounded text-xs transition-colors inline-flex items-center gap-1 hover:bg-gray-100"
-                      title="Delete"
-                    >
-                      <Trash2 size={20}/> 
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="px-6 py-12 text-center text-gray-500 italic">
-                  {searchTerm || statusFilter !== 'all' ? 
-                    "No blogs found with the current filters." : 
-                    "No blogs found. Click 'ADD NEW' to create your first blog."
-                  }
-                </td>
-              </tr>
+                  ))}
+
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    className="w-10 h-10 flex items-center justify-center rounded-md bg-[#1A1A1A] text-white hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             )}
-          </tbody>
-        </table>
+          </div>
+        </div>
       </div>
 
       {/* Modal Form */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg w-full max-w-2xl my-8 overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl w-full max-w-2xl my-8 overflow-hidden shadow-2xl relative z-[110] animate-in zoom-in-95 slide-in-from-bottom-8 fade-in duration-500 ease-out">
             
-            {/* RED HEADER */}
-            <div className="bg-white text-[#7F0404] p-4 flex justify-between items-center">
-              <h3 className="m-0 text-lg font-bold tracking-wide">
+            {/* HEADER */}
+            <div className="bg-white text-[#7F0404] p-6 flex justify-between items-center border-b border-gray-100">
+              <h3 className="text-2xl font-bold uppercase tracking-tight">
                 {editingBlog ? 'EDIT BLOG' : 'ADD NEW BLOG'}
               </h3>
               <button 
                 onClick={handleCloseForm}
-                className="text-[#7F0404] hover:text-[#7F0404] disabled:opacity-50"
+                className="text-gray-400 hover:text-[#7F0404] transition-colors disabled:opacity-50"
                 disabled={formLoading}
               >
-                <X size={24}/>
+                <X size={28} strokeWidth={2.5}/>
               </button>
             </div>
 
-            {/* WHITE CONTENT AREA */}
-            <div className="p-6 bg-white max-h-[calc(90vh-60px)] overflow-y-auto">
+            {/* CONTENT AREA */}
+            <div className="p-8 bg-white max-h-[calc(85vh-80px)] overflow-y-auto">
               <form onSubmit={handleSubmit}>
-                {/* Title - Full Width */}
                 <div className="mb-4">
-                   <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                    Title {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                   <label className="block text-sm font-bold mb-2 text-[#7F0404]">
+                    Title {editingBlog && <span className="text-gray-400 font-medium text-xs">(Optional - upload only if changing)</span>}
                   </label>
                   <input 
                     type="text"
-                    placeholder="Title *"
-                    className="w-full p-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#7F0404]"
+                    placeholder="Enter Title *"
+                    className="w-full p-2.5 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#7F0404] transition-colors font-medium"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
                     required
@@ -448,15 +395,14 @@ const Blog = () => {
                   />
                 </div>
 
-                {/* Sub Title - Full Width */}
                 <div className="mb-4">
-                   <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                    Sub Title {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                   <label className="block text-sm font-bold mb-2 text-[#7F0404]">
+                    Sub Title {editingBlog && <span className="text-gray-400 font-medium text-xs">(Optional - upload only if changing)</span>}
                   </label>
                   <input 
                     type="text"
-                    placeholder="Sub Title *"
-                    className="w-full p-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#7F0404]"
+                    placeholder="Enter Sub Title *"
+                    className="w-full p-2.5 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#7F0404] transition-colors font-medium"
                     value={formData.subTitle}
                     onChange={(e) => handleInputChange('subTitle', e.target.value)}
                     required
@@ -464,15 +410,14 @@ const Blog = () => {
                   />
                 </div>
 
-                {/* Paragraph 1 - Full Width */}
                 <div className="mb-4">
-                   <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                    Paragraph 1 {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                   <label className="block text-sm font-bold mb-2 text-[#7F0404]">
+                    Paragraph 1 {editingBlog && <span className="text-gray-400 font-medium text-xs">(Optional - upload only if changing)</span>}
                   </label>
                   <textarea
-                    placeholder="Paragraph 1 *"
+                    placeholder="Enter Paragraph 1 *"
                     rows="4"
-                    className="w-full p-2.5 border border-gray-300 rounded text-sm resize-y focus:outline-none focus:ring-1 focus:ring-[#7F0404]"
+                    className="w-full p-2.5 border-2 border-gray-300 rounded-lg text-sm resize-y focus:outline-none focus:border-[#7F0404] transition-colors font-medium"
                     value={formData.paragraph1}
                     onChange={(e) => handleInputChange('paragraph1', e.target.value)}
                     required
@@ -480,157 +425,73 @@ const Blog = () => {
                   />
                 </div>
 
-                {/* Paragraph 2 - Full Width */}
                 <div className="mb-4">
-                   <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                    Paragraph 2 {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                   <label className="block text-sm font-bold mb-2 text-[#7F0404]">
+                    Paragraph 2 {editingBlog && <span className="text-gray-400 font-medium text-xs">(Optional - upload only if changing)</span>}
                   </label>
                   <textarea
-                    placeholder="Paragraph 2"
+                    placeholder="Enter Paragraph 2 (Optional)"
                     rows="3"
-                    className="w-full p-2.5 border border-gray-300 rounded text-sm resize-y focus:outline-none focus:ring-1 focus:ring-[#7F0404]"
+                    className="w-full p-2.5 border-2 border-gray-300 rounded-lg text-sm resize-y focus:outline-none focus:border-[#7F0404] transition-colors font-medium"
                     value={formData.paragraph2}
                     onChange={(e) => handleInputChange('paragraph2', e.target.value)}
                     disabled={formLoading}
                   />
                 </div>
 
-                {/* Paragraph 3 - Full Width */}
                 <div className="mb-6">
-                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                    Paragraph 3 {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                    <label className="block text-sm font-bold mb-2 text-[#7F0404]">
+                    Paragraph 3 {editingBlog && <span className="text-gray-400 font-medium text-xs">(Optional - upload only if changing)</span>}
                   </label>
                   <textarea
-                    placeholder="Paragraph 3"
+                    placeholder="Enter Paragraph 3 (Optional)"
                     rows="3"
-                    className="w-full p-2.5 border border-gray-300 rounded text-sm resize-y focus:outline-none focus:ring-1 focus:ring-[#7F0404]"
+                    className="w-full p-2.5 border-2 border-gray-300 rounded-lg text-sm resize-y focus:outline-none focus:border-[#7F0404] transition-colors font-medium"
                     value={formData.paragraph3}
                     onChange={(e) => handleInputChange('paragraph3', e.target.value)}
                     disabled={formLoading}
                   />
                 </div>
 
-                {/* Thumbnail - Full Width */}
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                    Thumbnail {editingBlog && <span className="text-gray-500 text-xs">(Optional - upload only if changing)</span>}
+                <div className="mb-6">
+                  <label className="block text-sm font-bold mb-2 text-[#7F0404]">
+                    Thumbnail Image {editingBlog && <span className="text-gray-400 font-medium text-xs">(Optional - upload only if changing)</span>}
                   </label>
                   <input 
                     type="file"
                     accept="image/*"
-                    className="w-full p-2 border border-gray-300 rounded text-sm bg-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                    className="w-full border-2 border-gray-300 p-2 rounded-lg outline-none cursor-pointer focus:border-[#7F0404] transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-red-50 file:text-[#7F0404] hover:file:bg-red-100"
                     onChange={(e) => handleFileChange('thumbnail', e)}
                     disabled={formLoading}
                   />
                   {filePreviews.thumbnail && (
-                    <p className="mt-1 text-xs text-green-600">
-                      Selected: {filePreviews.thumbnail}
-                    </p>
+                    <p className="mt-2 text-sm font-bold text-green-600">New Thumbnail: {filePreviews.thumbnail}</p>
                   )}
                 </div>
 
-                {/* Images 1-5 and Status - 3 Column Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  {/* Image 1 */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                      Image 1 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
-                    </label>
-                    <input 
-                      type="file"
-                      accept="image/*"
-                      className="w-full p-2 border border-gray-300 rounded text-sm bg-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100"
-                      onChange={(e) => handleFileChange('image1', e)}
-                      disabled={formLoading}
-                    />
-                    {filePreviews.image1 && (
-                      <p className="mt-1 text-xs text-green-600">
-                        {filePreviews.image1}
-                      </p>
-                    )}
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-8">
+                  {['image1', 'image2', 'image3', 'image4', 'image5'].map((imgKey, index) => (
+                    <div key={imgKey}>
+                      <label className="block text-sm font-bold mb-2 text-[#7F0404]">
+                        Image {index + 1} {editingBlog && <span className="text-gray-400 font-medium text-xs">(Optional)</span>}
+                      </label>
+                      <input 
+                        type="file"
+                        accept="image/*"
+                        className="w-full border-2 border-gray-300 p-2 rounded-lg outline-none cursor-pointer focus:border-[#7F0404] transition-colors file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-[#7F0404] hover:file:bg-red-100"
+                        onChange={(e) => handleFileChange(imgKey, e)}
+                        disabled={formLoading}
+                      />
+                      {filePreviews[imgKey] && (
+                        <p className="mt-1 text-xs font-bold text-green-600">{filePreviews[imgKey]}</p>
+                      )}
+                    </div>
+                  ))}
                   
-                  {/* Image 2 */}
                   <div>
-                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                      Image 2 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
-                    </label>
-                    <input 
-                      type="file"
-                      accept="image/*"
-                      className="w-full p-2 border border-gray-300 rounded text-sm bg-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100"
-                      onChange={(e) => handleFileChange('image2', e)}
-                      disabled={formLoading}
-                    />
-                    {filePreviews.image2 && (
-                      <p className="mt-1 text-xs text-green-600">
-                        {filePreviews.image2}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Image 3 */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                      Image 3 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
-                    </label>
-                    <input 
-                      type="file"
-                      accept="image/*"
-                      className="w-full p-2 border border-gray-300 rounded text-sm bg-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100"
-                      onChange={(e) => handleFileChange('image3', e)}
-                      disabled={formLoading}
-                    />
-                    {filePreviews.image3 && (
-                      <p className="mt-1 text-xs text-green-600">
-                        {filePreviews.image3}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Image 4 */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                      Image 4 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
-                    </label>
-                    <input 
-                      type="file"
-                      accept="image/*"
-                      className="w-full p-2 border border-gray-300 rounded text-sm bg-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100"
-                      onChange={(e) => handleFileChange('image4', e)}
-                      disabled={formLoading}
-                    />
-                    {filePreviews.image4 && (
-                      <p className="mt-1 text-xs text-green-600">
-                        {filePreviews.image4}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Image 5 */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">
-                      Image 5 {editingBlog && <span className="text-gray-500 text-xs">(Optional)</span>}
-                    </label>
-                    <input 
-                      type="file"
-                      accept="image/*"
-                      className="w-full p-2 border border-gray-300 rounded text-sm bg-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100"
-                      onChange={(e) => handleFileChange('image5', e)}
-                      disabled={formLoading}
-                    />
-                    {filePreviews.image5 && (
-                      <p className="mt-1 text-xs text-green-600">
-                        {filePreviews.image5}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Status */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-[#7F0404]">Status</label>
+                    <label className="block text-sm font-bold mb-2 text-[#7F0404]">Status</label>
                     <select
-                      className="w-full p-2.5 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#7F0404]"
+                      className="w-full p-2.5 border-2 border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-[#7F0404] transition-colors font-medium"
                       value={formData.status}
                       onChange={(e) => handleInputChange('status', e.target.value)}
                       disabled={formLoading}
@@ -642,24 +503,23 @@ const Blog = () => {
                   </div>
                 </div>
 
-                {/* Buttons - Right Aligned */}
-                <div className="flex gap-2 justify-end mt-6 pt-4 border-t border-gray-200">
+                <div className="flex gap-4 mt-8">
                   <button 
                     type="button"
                     onClick={handleClearForm}
                     disabled={formLoading}
-                    className="px-5 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="flex-1 bg-orange-500 text-white font-bold py-2.5 rounded-lg hover:bg-orange-600 active:scale-95 transition-all shadow disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    Clear
+                    Clear Form
                   </button>
                   
                   <button 
                     type="submit"
                     disabled={formLoading}
-                    className="px-5 py-2.5 bg-[#7F0404] hover:bg-[#6a0303] disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors flex items-center gap-2"
+                    className="flex-1 bg-[#7F0404] text-white font-bold py-2.5 rounded-lg hover:bg-red-800 active:scale-95 transition-all shadow disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {formLoading && <Loader2 className="animate-spin" size={16}/>}
-                    {formLoading ? 'Processing...' : (editingBlog ? 'Update' : 'Submit')}
+                    {formLoading && <Loader2 className="animate-spin" size={18}/>}
+                    {formLoading ? 'Processing...' : (editingBlog ? 'Update Blog' : 'Submit Blog')}
                   </button>
                 </div>
               </form>

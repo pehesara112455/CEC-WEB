@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import NavBar from "./../Components/AdminNav.jsx"; // IMPORT NAVBAR
 
 const DonationDetails = () => {
   // 1. State
@@ -6,6 +7,9 @@ const DonationDetails = () => {
   const [donations, setDonations] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // --- SIDEBAR STATE ---
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // --- MODAL & FORM STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -172,157 +176,171 @@ const DonationDetails = () => {
   const emptyRows = itemsPerPage - currentItems.length;
 
   return (
-    <div className="min-h-screen bg-[#FFF5F5] p-8 font-sans relative">
+    // FIX: Main container set to flex, h-screen, and overflow-hidden for sidebar integration
+    <div className="flex bg-[#FFF5F5] h-screen overflow-hidden font-sans relative">
        
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">         
-        <div>
-            {/* --- HEADER --- */}
-            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                <h1 className="text-2xl font-bold text-[#8B0000] uppercase tracking-wide ml-12 md:ml-14">
-                    DONATION DETAILS
-                </h1>
+      {/* FIX: Add NavBar Component */}
+      <NavBar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className="relative group w-full md:w-72">
-                        <input
-                            type="text"
-                            placeholder="Search donations..."
-                            value={searchTerm}
-                            onChange={handleSearch}
-                            className="w-full pl-5 pr-10 py-2 rounded-md border border-gray-300 text-gray-600 focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] transition-all"
-                        />
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+      {/* FIX: Main scrolling content area */}
+      <div className="flex-1 h-full overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 transition-all duration-300 min-w-0">
+        <div className="max-w-6xl mx-auto">
+          
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">         
+            <div>
+                {/* --- HEADER --- */}
+                <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                    <h1 className="text-2xl font-bold text-[#8B0000] uppercase tracking-wide">
+                        DONATION DETAILS
+                    </h1>
+
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className="relative group w-full md:w-72">
+                            <input
+                                type="text"
+                                placeholder="Search donations..."
+                                value={searchTerm}
+                                onChange={handleSearch}
+                                className="w-full pl-5 pr-10 py-2.5 rounded-md border border-gray-300 text-gray-600 focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] transition-all font-medium"
+                            />
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
                         </div>
-                    </div>
 
-                    <button 
-                        onClick={handleOpenAddModal} 
-                        className="bg-[#8B0000] text-white px-6 py-2 rounded-md font-bold hover:bg-red-900 transition-colors shadow-sm whitespace-nowrap flex items-center gap-2"
-                    >
-                         + ADD NEW
-                    </button>
+                        <button 
+                            onClick={handleOpenAddModal} 
+                            className="bg-[#8B0000] text-white px-6 py-2.5 rounded-md font-bold hover:bg-red-900 transition-colors shadow-sm whitespace-nowrap flex items-center gap-2 active:scale-95"
+                        >
+                             + ADD NEW
+                        </button>
+                    </div>
+                </div>
+
+                {/* --- TABLE --- */}
+                <div className="overflow-x-auto min-h-[380px]">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                    <tr className="border-b-2 border-[#8B0000]">
+                        {['Name', 'Country', 'Contact', 'Date', 'Amount', 'Actions'].map((header) => (
+                        <th key={header} className="py-4 px-2 font-bold text-[#8B0000] text-sm tracking-wide uppercase">
+                            {header}
+                        </th>
+                        ))}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    
+                    {loading && (
+                        <tr><td colSpan="6" className="text-center py-20 font-medium text-gray-500">Loading data...</td></tr>
+                    )}
+
+                    {!loading && currentItems.map((item) => (
+                        <tr
+                        key={item.id}
+                        className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors h-16"
+                        >
+                        <td className="px-2 font-bold text-gray-800 text-sm">{item.name}</td>
+                        <td className="px-2 text-gray-600 font-medium text-sm">{item.country}</td>
+                        <td className="px-2 text-gray-600 font-medium text-sm">{item.contact}</td>
+                        <td className="px-2 text-gray-600 font-medium text-sm">{item.date}</td>
+                        <td className="px-2 font-black text-[#8B0000] text-sm">{item.amount}</td>
+                        <td className="px-2">
+                            <div className="flex items-center gap-3">
+                            
+                            {/* EDIT BUTTON */}
+                            <button 
+                                onClick={() => handleEdit(item)} 
+                                className="text-orange-500 hover:text-orange-600 hover:scale-110 transition-all"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                            </button>
+                            
+                            {/* DELETE BUTTON */}
+                            <button 
+                                onClick={() => handleDelete(item.id)}
+                                className="text-gray-400 hover:text-red-600 hover:scale-110 transition-all"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                            </div>
+                        </td>
+                        </tr>
+                    ))}
+
+                    {emptyRows > 0 && Array.from({ length: emptyRows }).map((_, index) => (
+                        <tr key={`empty-${index}`} className="h-16 border-b border-transparent">
+                            <td colSpan={6}></td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+
+                {!loading && donations.length === 0 && (
+                    <div className="text-center py-20 text-gray-400 font-medium italic">
+                    No results found for "{searchTerm}"
+                    </div>
+                )}
                 </div>
             </div>
 
-            {/* --- TABLE --- */}
-            <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-                <thead>
-                <tr className="border-b-2 border-[#8B0000]">
-                    {['Name', 'Country', 'Contact', 'Date', 'Amount', 'Actions'].map((header) => (
-                    <th key={header} className="py-4 px-2 font-bold text-[#8B0000] text-sm tracking-wide">
-                        {header}
-                    </th>
-                    ))}
-                </tr>
-                </thead>
-                <tbody>
-                
-                {loading && (
-                    <tr><td colSpan="6" className="text-center py-4">Loading data...</td></tr>
-                )}
-
-                {!loading && currentItems.map((item) => (
-                    <tr
-                    key={item.id}
-                    className="bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors h-15"
-                    >
-                    <td className="px-2 font-bold text-gray-800 text-sm">{item.name}</td>
-                    <td className="px-2 text-gray-500 text-sm">{item.country}</td>
-                    <td className="px-2 text-gray-500 text-sm">{item.contact}</td>
-                    <td className="px-2 text-gray-500 text-sm">{item.date}</td>
-                    <td className="px-2 font-bold text-gray-900 text-sm">{item.amount}</td>
-                    <td className="px-2">
-                        <div className="flex items-center gap-3">
-                        
-                        {/* EDIT BUTTON */}
-                        <button 
-                            onClick={() => handleEdit(item)} 
-                            className="text-orange-400 hover:text-orange-600 transition-colors"
+            {/* --- PAGINATION --- */}
+            {totalPages > 1 && (
+                <div className="mt-8 flex flex-col items-center justify-center gap-3 border-t border-gray-100 pt-6">
+                    <span className="text-sm font-bold text-gray-400 tracking-wide">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    
+                    <div className="flex gap-2">
+                        <button
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => prev - 1)}
+                            className="w-10 h-10 flex items-center justify-center rounded-md bg-[#1A1A1A] text-white hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        
-                        {/* DELETE BUTTON */}
-                        <button 
-                            onClick={() => handleDelete(item.id)}
-                            className="text-slate-400 hover:text-red-600 transition-colors"
+
+                        {[...Array(totalPages)].map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={`w-10 h-10 rounded-md font-bold text-sm transition-all duration-200 shadow-sm ${
+                                    currentPage === i + 1 
+                                    ? "bg-[#8B0000] text-white" 
+                                    : "bg-[#8E8E8E] text-white hover:bg-gray-500"
+                                }`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+
+                        <button
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => prev + 1)}
+                            className="w-10 h-10 flex items-center justify-center rounded-md bg-[#1A1A1A] text-white hover:bg-black disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
-                        </div>
-                    </td>
-                    </tr>
-                ))}
-
-                {emptyRows > 0 && Array.from({ length: emptyRows }).map((_, index) => (
-                    <tr key={`empty-${index}`} className="h-15 border-b border-transparent">
-                        <td colSpan={6}></td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-
-            {!loading && donations.length === 0 && (
-                <div className="text-center py-12 text-gray-400">
-                No results found for "{searchTerm}"
+                    </div>
                 </div>
             )}
-            </div>
+          </div>
         </div>
-
-        {/* --- PAGINATION --- */}
-        {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-4">
-                <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
-                className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#8B0000]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                </button>
-                
-                <div className="flex gap-2 bg-gray-50 p-1.5 rounded-full border border-gray-200">
-                {[...Array(totalPages)].map((_, i) => (
-                    <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-10 h-10 rounded-full font-bold transition-all duration-300 ${
-                        currentPage === i + 1 
-                        ? "bg-[#8B0000] text-white shadow-lg scale-110" 
-                        : "text-gray-400 hover:text-[#8B0000] hover:bg-white"
-                    }`}
-                    >
-                    {i + 1}
-                    </button>
-                ))}
-                </div>
-
-                <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
-                className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#8B0000]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                </button>
-            </div>
-        )}
       </div>
 
       {/* --- POPUP MODAL --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             {/* Backdrop with Blur */}
             <div 
                 className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
@@ -330,11 +348,11 @@ const DonationDetails = () => {
             ></div>
 
             {/* Modal Content */}
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative z-110 animate-in zoom-in-95 slide-in-from-bottom-8 fade-in duration-500 ease-out">
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative z-[110] animate-in zoom-in-95 slide-in-from-bottom-8 fade-in duration-500 ease-out">
                 {/* Close Button */}
                 <button 
                     onClick={() => setIsModalOpen(false)} 
-                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 text-3xl"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 text-3xl transition-colors"
                 >
                     &times;
                 </button>
@@ -356,7 +374,7 @@ const DonationDetails = () => {
                                 name="name"
                                 value={formData.name}
                                 onChange={handleInputChange}
-                                className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                className="w-full border-2 border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#8B0000] transition-colors font-medium text-gray-700"
                                 placeholder="e.g. John Doe"
                             />
                         </div>
@@ -370,7 +388,7 @@ const DonationDetails = () => {
                                     name="country"
                                     value={formData.country}
                                     onChange={handleInputChange}
-                                    className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                    className="w-full border-2 border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#8B0000] transition-colors font-medium text-gray-700"
                                     placeholder="e.g. USA"
                                 />
                             </div>
@@ -382,7 +400,7 @@ const DonationDetails = () => {
                                     name="date"
                                     value={formData.date}
                                     onChange={handleInputChange}
-                                    className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                    className="w-full border-2 border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#8B0000] transition-colors font-medium text-gray-700"
                                 />
                             </div>
                         </div>
@@ -395,7 +413,7 @@ const DonationDetails = () => {
                                 name="contact"
                                 value={formData.contact}
                                 onChange={handleInputChange}
-                                className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                className="w-full border-2 border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#8B0000] transition-colors font-medium text-gray-700"
                                 placeholder="e.g. +1 234 567 890"
                             />
                         </div>
@@ -408,7 +426,7 @@ const DonationDetails = () => {
                                 name="amount"
                                 value={formData.amount}
                                 onChange={handleInputChange}
-                                className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-[#8B0000]/20"
+                                className="w-full border-2 border-gray-300 p-2.5 rounded-lg outline-none focus:border-[#8B0000] transition-colors font-medium text-gray-700"
                                 placeholder="e.g. 5000"
                             />
                         </div>
@@ -418,13 +436,13 @@ const DonationDetails = () => {
                             <button 
                                 type="button" 
                                 onClick={() => setIsModalOpen(false)}
-                                className="flex-1 bg-orange-500 text-white font-bold py-2.5 rounded-lg active:scale-95 shadow hover:bg-orange-600 transition-colors"
+                                className="flex-1 bg-orange-500 text-white font-bold py-3 rounded-lg active:scale-95 shadow hover:bg-orange-600 transition-all"
                             >
                                 Cancel
                             </button>
                             <button 
                                 type="submit" 
-                                className="flex-1 bg-[#8B0000] text-white font-bold py-2.5 rounded-lg active:scale-95 shadow hover:bg-red-800 transition-colors"
+                                className="flex-1 bg-[#8B0000] text-white font-bold py-3 rounded-lg active:scale-95 shadow hover:bg-red-800 transition-all"
                             >
                                 {editingId ? 'Update' : 'Submit'}
                             </button>

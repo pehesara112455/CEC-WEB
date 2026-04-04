@@ -29,7 +29,7 @@ function App() {
       <Route path="/clientDetailsTable" element={<ClientDetailsTable />} />
       <Route path="/admin/add-halls-rooms" element={<AddHallsRooms />} />
       <Route path="/blog" element={<Blog />} />
-      <Route path="/admin" element={<DonationDetails />} />
+      <Route path="/DonationDetails" element={<DonationDetails />} />
     </Routes>
    </BrowserRouter>
   );

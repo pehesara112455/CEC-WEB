@@ -1,4 +1,5 @@
-const { db } = require("../Config/Firebase");
+// FIX: Import the database exactly how you did in your HallsRoomsController
+const db = require("../Config/Firebase"); 
 const cloudinary = require("../Config/Cloudinary");
 const streamifier = require("streamifier");
 
@@ -29,8 +30,7 @@ const uploadImage = (file) => {
 /* ================= CREATE BLOG ================= */
 exports.createBlog = async (req, res) => {
   try {
-    const { title, subTitle, paragraph1, paragraph2, paragraph3, status } =
-      req.body;
+    const { title, subTitle, paragraph1, paragraph2, paragraph3, status } = req.body;
 
     let thumbnailUrl = null;
     if (req.files?.thumbnail?.[0]) {
@@ -54,8 +54,8 @@ exports.createBlog = async (req, res) => {
       status,
       thumbnail: thumbnailUrl,
       images: imageUrls,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     const docRef = await db.collection("blogs").add(blogData);
@@ -66,6 +66,7 @@ exports.createBlog = async (req, res) => {
       data: blogData,
     });
   } catch (error) {
+    console.error("Create Blog Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -85,6 +86,7 @@ exports.getBlogs = async (req, res) => {
 
     res.json({ success: true, blogs });
   } catch (error) {
+    console.error("Get Blogs Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -103,6 +105,7 @@ exports.getBlogById = async (req, res) => {
       blog: { id: doc.id, ...doc.data() },
     });
   } catch (error) {
+    console.error("Get Blog By ID Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -131,16 +134,16 @@ exports.updateBlog = async (req, res) => {
         const url = await uploadImage(img);
         if (url) newImages.push(url);
       }
-
       updates.images = [...(existingData.images || []), ...newImages];
     }
 
-    updates.updatedAt = new Date();
+    updates.updatedAt = new Date().toISOString();
 
     await docRef.update(updates);
 
     res.json({ success: true, message: "Blog updated successfully" });
   } catch (error) {
+    console.error("Update Blog Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -151,6 +154,7 @@ exports.deleteBlog = async (req, res) => {
     await db.collection("blogs").doc(req.params.id).delete();
     res.json({ success: true, message: "Blog deleted" });
   } catch (error) {
+    console.error("Delete Blog Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
