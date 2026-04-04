@@ -1,5 +1,4 @@
 // Nav-Bar.jsx
-import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 
@@ -14,7 +13,7 @@ const NavBar = ({ isOpen, setIsOpen }) => {
 
     { name: 'BLOG POSTS', href: '/blog' },
 
-    { name: 'SERVICES', href: '#' },
+    { name: 'SERVICES', href: '/ServicesDetails' },
     { name: 'DONATIONS', href: '/DonationDetails' },
   ];
 
