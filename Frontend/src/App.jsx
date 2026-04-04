@@ -1,35 +1,39 @@
 // App.jsx
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
-// Import your components
+import { BrowserRouter,  Routes, Route } from 'react-router-dom'; 
 import AdminNav from './Components/AdminNav.jsx';
-import Services from './Pages/Services.jsx';
+import Reservation from "./Pages/Admin-Reservation.jsx";
+import AddReservation from './Components/addNewReservation.jsx';
+import AddReservationStage2 from './Components/addNewreservation2.jsx';
+import EditReservation from './Components/Editreservation.jsx';
+import EditReservationStage2 from './Components/Editreservation2.jsx';
+import AddNewClient from './Components/AddNewClient.jsx';
+import ClientDetailsTable from './Components/ClientDetailsTable.jsx';
+import Login from './Pages/Login.jsx';
+import AddHallsRooms from './Pages/AddHalls&Rooms.jsx';
+import Blog from "./Pages/Blog.jsx";
+import DonationDetails from './Pages/DonationDetails.jsx';
 
 function App() {
   return (
-    <BrowserRouter>
-      {/* Main Layout Container */}
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
-        
-        {/* 1. Sidebar (Always visible) */}
-        {/* We place this outside the Routes so it stays on screen while pages change */}
-        <AdminNav />
-
-        {/* 2. Content Area (Changes based on URL) */}
-        <main className="flex-1 overflow-auto">
-          <Routes>
-            {/* When the URL is '/admin', show the Services page */}
-            <Route path="/admin" element={<Services />} />
-            
-            {/* Future routes can go here, e.g.: */}
-            {/* <Route path="/admin/rooms" element={<Rooms />} /> */}
-          </Routes>
-        </main>
-
-      </div>
-    </BrowserRouter>
+   <BrowserRouter>
+   <Routes>
+      <Route path="/" element ={<Login/>}/>
+      <Route path="/admin" element={<AdminNav />} />
+      <Route path="/reservation" element={<Reservation />} />
+      <Route path="/addReservation" element={<AddReservation />} />
+      <Route path="/addReservationStage2" element={<AddReservationStage2 />} />
+      <Route path="/editReservation" element={<EditReservation />} />
+      <Route path="/editReservationStage2" element={<EditReservationStage2 />} />
+      <Route path="/addNewClient" element={<AddNewClient />} />
+      <Route path="/clientDetailsTable" element={<ClientDetailsTable />} />
+      <Route path="/admin/add-halls-rooms" element={<AddHallsRooms />} />
+      <Route path="/blog" element={<Blog />} />
+      <Route path="/DonationDetails" element={<DonationDetails />} />
+    </Routes>
+   </BrowserRouter>
   );
 }
 
 export default App;
+

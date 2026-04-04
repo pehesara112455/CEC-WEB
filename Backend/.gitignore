@@ -1,5 +1,7 @@
-.env
 node_modules/
-Backend/serviceAccountKey.json
-serviceAccountKey.json
-../frontend/node_modules/
+.vite/
+dist/
+.env
+*.json.local
+serviceAccountKey*.json
+
