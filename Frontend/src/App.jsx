@@ -13,7 +13,7 @@ import Login from './Pages/Login.jsx';
 import AddHallsRooms from './Pages/AddHalls&Rooms.jsx';
 import Blog from "./Pages/Blog.jsx";
 import DonationDetails from './Pages/DonationDetails.jsx';
-import AdminServices from './Pages/Services.jsx';
+import AdminServices from './Pages/AdminServices.jsx';
 import Homepage from './Pages/Homepage.jsx';
 import Services from './Pages/Services.jsx';
 import Programs from './Pages/Programs.jsx';
